@@ -78,7 +78,11 @@ config game_classification::to_config() const
 	cfg["difficulty"] = difficulty;
 	cfg["random_mode"] = random_mode;
 	cfg["oos_debug"] = oos_debug;
+<<<<<<< HEAD
 	cfg["core"] = prefs::get().core_id();
+=======
+	cfg["core"] = prefs::get().core();
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 
 	return cfg;
 }

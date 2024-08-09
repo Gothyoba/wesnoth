@@ -110,15 +110,6 @@ private:
 	value_type value_;
 
 public:
-	/** Default implementation, but defined out-of-line for efficiency reasons. */
-	config_attribute_value();
-	/** Default implementation, but defined out-of-line for efficiency reasons. */
-	~config_attribute_value();
-	/** Default implementation, but defined out-of-line for efficiency reasons. */
-	config_attribute_value(const config_attribute_value &);
-	/** Default implementation, but defined out-of-line for efficiency reasons. */
-	config_attribute_value &operator=(const config_attribute_value &);
-
 	// Numeric assignments:
 	config_attribute_value& operator=(bool v);
 	config_attribute_value& operator=(int v);
@@ -149,6 +140,12 @@ public:
 	double to_double(double def = 0.) const;
 	std::string str(const std::string& fallback = "") const;
 	t_string t_str() const;
+
+	bool to(const bool def) const { return to_bool(def); }
+	int to(int def) const { return to_int(def); }
+	unsigned to(unsigned def) const { return to_unsigned(def); }
+	double to(double def) const { return to_double(def); }
+	std::string to(const std::string& def) const { return str(def); }
 
 	// Implicit conversions:
 	operator int() const { return to_int(); }

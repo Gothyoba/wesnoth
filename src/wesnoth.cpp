@@ -54,6 +54,7 @@
 #include "widgets/button.hpp" // for button
 #include "wml_exception.hpp"  // for wml_exception
 
+#include "utils/spritesheet_generator.hpp"
 #ifdef _WIN32
 #include "log_windows.hpp"
 
@@ -276,6 +277,7 @@ static int process_command_args(commandline_options& cmdline_opts)
 		lg::set_log_sanitize(false);
 	}
 
+<<<<<<< HEAD
 	// decide whether to redirect output to a file or not
 	if(cmdline_opts.log_to_file) {
 		cmdline_opts.final_log_redirect_to_file = true;
@@ -308,6 +310,40 @@ static int process_command_args(commandline_options& cmdline_opts)
 			&& !cmdline_opts.validate_schema
 			&& !cmdline_opts.validate_wml;
 	}
+=======
+	// If true, output will be redirected to file, else output be written to console.
+	// On Windows, if Wesnoth was not started from a console, one will be allocated.
+	const auto should_redirect_to_file = [&cmdline_opts] {
+		if(cmdline_opts.log_to_file) {
+			return true;
+		} else if(cmdline_opts.no_log_to_file) {
+			return false;
+		} else {
+			return !getenv("WESNOTH_NO_LOG_FILE")
+				// command line options that imply not redirecting output to a log file
+				// Some switches force a Windows console to be attached to the process even
+				// if Wesnoth is an IMAGE_SUBSYSTEM_WINDOWS_GUI executable because they
+				// turn it into a CLI application. Also, --no-log-to-file in particular attaches
+				// a console to a regular GUI game session.
+				&& !cmdline_opts.data_path
+				&& !cmdline_opts.help
+				&& !cmdline_opts.logdomains
+				&& !cmdline_opts.nogui
+				&& !cmdline_opts.report
+				&& !cmdline_opts.simple_version
+				&& !cmdline_opts.userdata_path
+				&& !cmdline_opts.version
+				&& !cmdline_opts.do_diff
+				&& !cmdline_opts.do_patch
+				&& !cmdline_opts.preprocess
+				&& !cmdline_opts.render_image
+				&& !cmdline_opts.screenshot
+				&& !cmdline_opts.headless_unit_test
+				&& !cmdline_opts.validate_schema
+				&& !cmdline_opts.validate_wml;
+		}
+	};
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 
 	if(cmdline_opts.usercache_dir) {
 		filesystem::set_cache_dir(*cmdline_opts.usercache_dir);
@@ -323,9 +359,20 @@ static int process_command_args(commandline_options& cmdline_opts)
 	}
 
 	// userdata is initialized, so initialize logging to file if enabled
+<<<<<<< HEAD
 	if(cmdline_opts.final_log_redirect_to_file) {
 		lg::set_log_to_file();
 	}
+=======
+	if(should_redirect_to_file()) {
+		lg::set_log_to_file();
+	}
+#ifdef _WIN32
+	else if(!cmdline_opts.no_console) {
+		lg::do_console_redirect();
+	}
+#endif
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 
 	if(cmdline_opts.log) {
 		for(const auto& log_pair : *cmdline_opts.log) {
@@ -495,6 +542,12 @@ static int process_command_args(commandline_options& cmdline_opts)
 		config_writer out(*os, compression::format::none);
 		out.write(base);
 		if(os != &std::cout) delete os;
+		return 0;
+	}
+
+	if(cmdline_opts.generate_spritesheet) {
+		PLAIN_LOG << "sheet path " << *cmdline_opts.generate_spritesheet;
+		image::build_spritesheet_from(*cmdline_opts.generate_spritesheet);
 		return 0;
 	}
 
@@ -717,7 +770,11 @@ static int do_gameloop(commandline_options& cmdline_opts)
 #endif
 
 	gui2::init();
+<<<<<<< HEAD
 	gui2::switch_theme(prefs::get().gui_theme());
+=======
+	gui2::switch_theme(prefs::get().gui2_theme());
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 	const gui2::event::manager gui_event_manager;
 
 	// if the log directory is not writable, then this is the error condition so show the error message.
@@ -897,7 +954,11 @@ static int do_gameloop(commandline_options& cmdline_opts)
 		case gui2::dialogs::title_screen::REDRAW_BACKGROUND:
 			break;
 		case gui2::dialogs::title_screen::RELOAD_UI:
+<<<<<<< HEAD
 			gui2::switch_theme(prefs::get().gui_theme());
+=======
+			gui2::switch_theme(prefs::get().gui2_theme());
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 			break;
 		}
 	}
@@ -935,6 +996,7 @@ int main(int argc, char** argv)
 		commandline_options cmdline_opts = commandline_options(args);
 		int finished = process_command_args(cmdline_opts);
 
+<<<<<<< HEAD
 #ifndef _WIN32
 		if(finished != -1) {
 			safe_exit(finished);
@@ -951,7 +1013,16 @@ int main(int argc, char** argv)
 					std::cin.get();
 				}
 				safe_exit(finished);
+=======
+		if(finished != -1) {
+#ifdef _WIN32
+			if(lg::using_own_console()) {
+				std::cerr << "Press enter to continue..." << std::endl;
+				std::cin.get();
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 			}
+#endif
+			safe_exit(finished);
 		}
 #endif
 

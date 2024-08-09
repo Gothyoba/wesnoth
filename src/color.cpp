@@ -20,13 +20,13 @@
 #include <iomanip>
 #include <sstream>
 
-color_t color_t::from_rgba_string(const std::string& c)
+color_t color_t::from_rgba_string(std::string_view c)
 {
 	if(c.empty()) {
 		return null_color();
 	}
 
-	std::vector<std::string> fields = utils::split(c);
+	std::vector<std::string_view> fields = utils::split_view(c);
 
 	// Allow either 3 (automatic opaque alpha) or 4 (explicit alpha) fields
 	if(fields.size() != 3 && fields.size() != 4) {
@@ -41,13 +41,13 @@ color_t color_t::from_rgba_string(const std::string& c)
 	};
 }
 
-color_t color_t::from_rgb_string(const std::string& c)
+color_t color_t::from_rgb_string(std::string_view c)
 {
 	if(c.empty()) {
 		return null_color();
 	}
 
-	std::vector<std::string> fields = utils::split(c);
+	std::vector<std::string_view> fields = utils::split_view(c);
 
 	if(fields.size() != 3) {
 		throw std::invalid_argument("Wrong number of components for RGB color");
@@ -61,12 +61,19 @@ color_t color_t::from_rgb_string(const std::string& c)
 	};
 }
 
-color_t color_t::from_hex_string(const std::string& c)
+color_t color_t::from_hex_string(std::string_view c)
 {
-	if(c.length() != 6) {
-		throw std::invalid_argument("Color hex string should be exactly 6 digits");
+	if(c[0] == '#') {
+		c = c.substr(1);
 	}
 
+<<<<<<< HEAD
+=======
+	if(c.length() != 6) {
+		throw std::invalid_argument("Color hex string should be exactly 6 digits (leading '#' optional)");
+	}
+
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 	if(std::any_of(c.begin(), c.end(), [](const char& ch) { return std::isxdigit(ch) == 0; })) {
 		throw std::invalid_argument("Color hex string contains invalid characters");
 	}

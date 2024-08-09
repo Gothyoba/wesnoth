@@ -573,7 +573,11 @@ void title_screen::button_callback_cores()
 	for(const config& core : game_config_manager::get()->game_config().child_range("core")) {
 		cores.push_back(core);
 
+<<<<<<< HEAD
 		if(core["id"] == prefs::get().core_id()) {
+=======
+		if(core["id"] == prefs::get().core()) {
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 			current = cores.size() - 1;
 		}
 	}
@@ -582,7 +586,11 @@ void title_screen::button_callback_cores()
 	if(core_dlg.show()) {
 		const std::string& core_id = cores[core_dlg.get_choice()]["id"];
 
+<<<<<<< HEAD
 		prefs::get().set_core_id(core_id);
+=======
+		prefs::get().set_core(core_id);
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 		get_window()->set_retval(RELOAD_GAME_DATA);
 	}
 }

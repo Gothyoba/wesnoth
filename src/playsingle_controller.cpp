@@ -538,11 +538,19 @@ void playsingle_controller::before_human_turn()
 		return;
 	}
 
+<<<<<<< HEAD
 	if(!did_autosave_this_turn_ && !game_config::disable_autosave && prefs::get().autosavemax() > 0) {
 		did_autosave_this_turn_ = true;
 		scoped_savegame_snapshot snapshot(*this);
 		savegame::autosave_savegame save(saved_game_, prefs::get().save_compression_format());
 		save.autosave(game_config::disable_autosave, prefs::get().autosavemax(), pref_constants::INFINITE_AUTO_SAVES);
+=======
+	if(!did_autosave_this_turn_ && !game_config::disable_autosave && prefs::get().auto_save_max() > 0) {
+		did_autosave_this_turn_ = true;
+		scoped_savegame_snapshot snapshot(*this);
+		savegame::autosave_savegame save(saved_game_, prefs::get().save_compression_format());
+		save.autosave(game_config::disable_autosave, prefs::get().auto_save_max(), pref_constants::INFINITE_AUTO_SAVES);
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 	}
 
 	if(prefs::get().turn_bell()) {

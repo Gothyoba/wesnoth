@@ -985,7 +985,11 @@ void menu_handler::execute_gotos(mouse_handler& mousehandler, int side)
 
 void menu_handler::toggle_ellipses()
 {
+<<<<<<< HEAD
 	prefs::get().set_ellipses(!prefs::get().ellipses());
+=======
+	prefs::get().set_show_side_colors(!prefs::get().show_side_colors());
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 	gui_->invalidate_all(); // TODO can fewer tiles be invalidated?
 }
 
@@ -1563,6 +1567,9 @@ void console_handler::do_droid()
 				psc->set_player_type_changed();
 			}
 		}
+	} else {
+		command_failed(VGETTEXT("Side '$side' is not a human or AI player.", symbols));
+		return;
 	}
 	menu_handler_.textbox_info_.close();
 }

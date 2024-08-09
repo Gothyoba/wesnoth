@@ -75,15 +75,26 @@ game_config_manager::game_config_manager(const commandline_options& cmdline_opts
 	}
 
 	// Clean the cache of any old Wesnoth version's cache data
+<<<<<<< HEAD
 	if(const std::string last_cleaned = prefs::get().last_cache_cleared_version(); !last_cleaned.empty()) {
 		if(version_info{last_cleaned} < game_config::wesnoth_version) {
 			if(cache_.clean_cache()) {
 				prefs::get().set_last_cache_cleared_version(game_config::wesnoth_version.str());
+=======
+	if(const std::string last_cleaned = prefs::get()._last_cache_cleaned_ver(); !last_cleaned.empty()) {
+		if(version_info{last_cleaned} < game_config::wesnoth_version) {
+			if(cache_.clean_cache()) {
+				prefs::get().set__last_cache_cleaned_ver(game_config::wesnoth_version.str());
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 			}
 		}
 	} else {
 		// If the preference wasn't set, set it, else the cleaning will never happen :P
+<<<<<<< HEAD
 		prefs::get().set_last_cache_cleared_version(game_config::wesnoth_version.str());
+=======
+		prefs::get().set__last_cache_cleaned_ver(game_config::wesnoth_version.str());
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 	}
 }
 
@@ -274,7 +285,11 @@ void game_config_manager::load_game_config(bool reload_everything, const game_cl
 				if(id == "default" && !current_core_valid) {
 					wml_tree_root = path;
 				}
+<<<<<<< HEAD
 				if(id == prefs::get().core_id()) {
+=======
+				if(id == prefs::get().core()) {
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 					current_core_valid = true;
 					wml_tree_root = path;
 				}
@@ -286,11 +301,19 @@ void game_config_manager::load_game_config(bool reload_everything, const game_cl
 				events::call_in_main_thread([&]() {
 					gui2::dialogs::wml_error::display(
 						_("Error loading core data."),
+<<<<<<< HEAD
 						_("Core ID: ") + prefs::get().core_id()
 						+ '\n' + _("Error loading the core with named id.")
 						+ '\n' + _("Falling back to the default core."));
 				});
 				prefs::get().set_core_id("default");
+=======
+						_("Core ID: ") + prefs::get().core()
+						+ '\n' + _("Error loading the core with named id.")
+						+ '\n' + _("Falling back to the default core."));
+				});
+				prefs::get().set_core("default");
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 			}
 
 			// check if we have a valid default core which should always be the case.
@@ -364,13 +387,21 @@ void game_config_manager::load_game_config(bool reload_everything, const game_cl
 					e.message);
 			});
 			load_game_config(reload_everything, classification, scenario_id);
+<<<<<<< HEAD
 		} else if(prefs::get().core_id() != "default") {
+=======
+		} else if(prefs::get().core() != "default") {
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 			events::call_in_main_thread([&]() {
 				gui2::dialogs::wml_error::display(
 					_("Error loading custom game configuration files. The game will fallback to the default core files."),
 					e.message);
 			});
+<<<<<<< HEAD
 			prefs::get().set_core_id("default");
+=======
+			prefs::get().set_core("default");
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 			game_config::no_addons = false;
 			load_game_config(reload_everything, classification, scenario_id);
 		} else {
@@ -534,7 +565,11 @@ void game_config_manager::load_addons_cfg()
 
 		// Skip add-ons not matching our current core. Cores themselves should be selectable
 		// at all times, so they aren't considered here.
+<<<<<<< HEAD
 		if(!metadata.empty() && metadata["type"] != "core" && using_core != prefs::get().core_id()) {
+=======
+		if(!metadata.empty() && metadata["type"] != "core" && using_core != prefs::get().core()) {
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 			continue;
 		}
 

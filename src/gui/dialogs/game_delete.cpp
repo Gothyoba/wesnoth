@@ -29,7 +29,11 @@ REGISTER_DIALOG(game_delete)
  */
 static bool get_dont_ask_again()
 {
+<<<<<<< HEAD
 	return !prefs::get().ask_delete_saves();
+=======
+	return !prefs::get().ask_delete();
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 }
 
 /**
@@ -39,7 +43,11 @@ static bool get_dont_ask_again()
  */
 static void set_dont_ask_again(const bool ask_again)
 {
+<<<<<<< HEAD
 	prefs::get().set_ask_delete_saves(!ask_again);
+=======
+	prefs::get().set_ask_delete(!ask_again);
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 }
 
 game_delete::game_delete()

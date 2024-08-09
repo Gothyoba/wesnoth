@@ -73,7 +73,11 @@ void countdown_clock::maybe_play_sound()
 {
 	if(!playing_sound_ && team_.countdown_time() < WARNTIME )
 	{
+<<<<<<< HEAD
 		if(prefs::get().turn_bell() || prefs::get().sound_on() || prefs::get().ui_sound_on())
+=======
+		if(prefs::get().turn_bell() || prefs::get().sound() || prefs::get().ui_sound_on())
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 		{
 			const int loop_ticks = team_.countdown_time();
 			const int fadein_ticks = (loop_ticks > WARNTIME / 2) ? loop_ticks - WARNTIME / 2 : 0;

@@ -1442,6 +1442,7 @@ void unit::remove_ability_by_id(const std::string& ability)
 	}
 }
 
+<<<<<<< HEAD
 static bool matches_ability_filter(const config & cfg, const std::string& tag_name, const config & filter)
 {
 	using namespace utils::config_filters;
@@ -1569,6 +1570,8 @@ bool unit::ability_matches_filter(const config & cfg, const std::string& tag_nam
 	return matches;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 void unit::remove_ability_by_attribute(const config& filter)
 {
 	set_attr_changed(UA_ABILITIES);

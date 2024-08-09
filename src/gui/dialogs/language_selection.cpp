@@ -128,7 +128,11 @@ void language_selection::post_show(window& window)
 		assert(res != -1);
 
 		::set_language(langs_[res]);
+<<<<<<< HEAD
 		prefs::get().set_language(langs_[res].localename);
+=======
+		prefs::get().set_locale(langs_[res].localename);
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 	}
 }
 

@@ -22,7 +22,10 @@
 #include "preferences/preferences.hpp"
 
 #include "cursor.hpp"
+<<<<<<< HEAD
 #include "desktop/notifications.hpp"
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 #include "game_board.hpp"
 #include "game_display.hpp"
 #include "formula/string_utils.hpp"
@@ -517,6 +520,7 @@ config::attribute_value prefs::get_as_attribute(const std::string &key)
 //
 // accessors
 //
+<<<<<<< HEAD
 bool prefs::show_ally_orb() {
 	return preferences_[prefs_list::show_ally_orb].to_bool(game_config::show_ally_orb);
 }
@@ -566,6 +570,8 @@ void prefs::set_show_disengaged_orb(bool show_orb) {
 	preferences_[prefs_list::show_disengaged_orb] = show_orb;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 static std::string fix_orb_color_name(const std::string& color) {
 	if (color.substr(0,4) == "orb_") {
 		if(color[4] >= '0' && color[4] <= '9') {
@@ -627,6 +633,7 @@ void prefs::set_partial_color(const std::string& color_id) {
 	preferences_[prefs_list::partial_orb_color] = color_id;
 }
 
+<<<<<<< HEAD
 std::string prefs::core_id() {
 	std::string core_id = preferences_[prefs_list::core].str();
 	if (core_id.empty())
@@ -647,6 +654,8 @@ void prefs::set_scroll_to_action(bool ison)
 	preferences_[prefs_list::scroll_to_action] = ison;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 point prefs::resolution()
 {
 	const unsigned x_res = preferences_[prefs_list::xresolution].to_unsigned();
@@ -663,6 +672,15 @@ point prefs::resolution()
 	);
 }
 
+<<<<<<< HEAD
+=======
+void prefs::set_resolution(const point& res)
+{
+	preferences_[prefs_list::xresolution] = std::to_string(res.x);
+	preferences_[prefs_list::yresolution] = std::to_string(res.y);
+}
+
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 int prefs::pixel_scale()
 {
 	// For now this has a minimum value of 1 and a maximum of 4.
@@ -674,6 +692,7 @@ void prefs::set_pixel_scale(const int scale)
 	preferences_[prefs_list::pixel_scale] = std::clamp(scale, pref_constants::min_pixel_scale, pref_constants::max_pixel_scale);
 }
 
+<<<<<<< HEAD
 bool prefs::auto_pixel_scale()
 {
 	return preferences_[prefs_list::auto_pixel_scale].to_bool(true);
@@ -720,6 +739,8 @@ void prefs::set_vsync(bool ison)
 	preferences_[prefs_list::vsync] = ison;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 bool prefs::turbo()
 {
 	if(video::headless()) {
@@ -734,6 +755,7 @@ void prefs::set_turbo(bool ison)
 	preferences_[prefs_list::turbo] = ison;
 }
 
+<<<<<<< HEAD
 double prefs::turbo_speed()
 {
 	return preferences_[prefs_list::turbo_speed].to_double(2.0);
@@ -744,6 +766,8 @@ void prefs::set_turbo_speed(const double speed)
 	preferences_[prefs_list::turbo_speed] = speed;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 int prefs::font_scaling()
 {
 	// Clip at 80 because if it's too low it'll cause crashes
@@ -770,6 +794,7 @@ void prefs::keepalive_timeout(int seconds)
 	preferences_[prefs_list::keepalive_timeout] = std::abs(seconds);
 }
 
+<<<<<<< HEAD
 bool prefs::idle_anim()
 {
 	return preferences_[prefs_list::idle_anim].to_bool(true);
@@ -830,6 +855,8 @@ void prefs::set_grid(bool ison)
 	preferences_[prefs_list::grid] = ison;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 std::size_t prefs::sound_buffer_size()
 {
 	// Sounds don't sound good on Windows unless the buffer size is 4k,
@@ -914,6 +941,7 @@ void prefs::set_ui_volume(int vol)
 	sound::set_UI_volume(ui_volume());
 }
 
+<<<<<<< HEAD
 unsigned int prefs::tile_size()
 {
 	return preferences_[prefs_list::tile_size].to_unsigned();
@@ -924,6 +952,8 @@ void prefs::set_tile_size(const unsigned int size)
 	preferences_[prefs_list::tile_size] = size;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 bool prefs::turn_bell()
 {
 	return preferences_[prefs_list::turn_bell].to_bool(true);
@@ -933,7 +963,11 @@ bool prefs::set_turn_bell(bool ison)
 {
 	if(!turn_bell() && ison) {
 		preferences_[prefs_list::turn_bell] = true;
+<<<<<<< HEAD
 		if(!music_on() && !sound_on() && !ui_sound_on()) {
+=======
+		if(!music_on() && !sound() && !ui_sound_on()) {
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 			if(!sound::init_sound()) {
 				preferences_[prefs_list::turn_bell] = false;
 				return false;
@@ -942,7 +976,11 @@ bool prefs::set_turn_bell(bool ison)
 	} else if(turn_bell() && !ison) {
 		preferences_[prefs_list::turn_bell] = false;
 		sound::stop_bell();
+<<<<<<< HEAD
 		if(!music_on() && !sound_on() && !ui_sound_on())
+=======
+		if(!music_on() && !sound() && !ui_sound_on())
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 			sound::close_sound();
 	}
 	return true;
@@ -957,7 +995,11 @@ bool prefs::set_ui_sound(bool ison)
 {
 	if(!ui_sound_on() && ison) {
 		preferences_[prefs_list::ui_sound] = true;
+<<<<<<< HEAD
 		if(!music_on() && !sound_on() && !turn_bell()) {
+=======
+		if(!music_on() && !sound() && !turn_bell()) {
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 			if(!sound::init_sound()) {
 				preferences_[prefs_list::ui_sound] = false;
 				return false;
@@ -966,7 +1008,11 @@ bool prefs::set_ui_sound(bool ison)
 	} else if(ui_sound_on() && !ison) {
 		preferences_[prefs_list::ui_sound] = false;
 		sound::stop_UI_sound();
+<<<<<<< HEAD
 		if(!music_on() && !sound_on() && !turn_bell())
+=======
+		if(!music_on() && !sound() && !turn_bell())
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 			sound::close_sound();
 	}
 	return true;
@@ -977,13 +1023,21 @@ bool prefs::message_bell()
 	return preferences_[prefs_list::message_bell].to_bool(true);
 }
 
+<<<<<<< HEAD
 bool prefs::sound_on()
+=======
+bool prefs::sound()
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 {
 	return preferences_[prefs_list::sound].to_bool(true);
 }
 
 bool prefs::set_sound(bool ison) {
+<<<<<<< HEAD
 	if(!sound_on() && ison) {
+=======
+	if(!sound() && ison) {
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 		preferences_[prefs_list::sound] = true;
 		if(!music_on() && !turn_bell() && !ui_sound_on()) {
 			if(!sound::init_sound()) {
@@ -991,7 +1045,11 @@ bool prefs::set_sound(bool ison) {
 				return false;
 			}
 		}
+<<<<<<< HEAD
 	} else if(sound_on() && !ison) {
+=======
+	} else if(sound() && !ison) {
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 		preferences_[prefs_list::sound] = false;
 		sound::stop_sound();
 		if(!music_on() && !turn_bell() && !ui_sound_on())
@@ -1008,7 +1066,11 @@ bool prefs::music_on()
 bool prefs::set_music(bool ison) {
 	if(!music_on() && ison) {
 		preferences_[prefs_list::music] = true;
+<<<<<<< HEAD
 		if(!sound_on() && !turn_bell() && !ui_sound_on()) {
+=======
+		if(!sound() && !turn_bell() && !ui_sound_on()) {
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 			if(!sound::init_sound()) {
 				preferences_[prefs_list::music] = false;
 				return false;
@@ -1018,7 +1080,11 @@ bool prefs::set_music(bool ison) {
 			sound::play_music();
 	} else if(music_on() && !ison) {
 		preferences_[prefs_list::music] = false;
+<<<<<<< HEAD
 		if(!sound_on() && !turn_bell() && !ui_sound_on())
+=======
+		if(!sound() && !turn_bell() && !ui_sound_on())
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 			sound::close_sound();
 		else
 			sound::stop_music();
@@ -1026,6 +1092,7 @@ bool prefs::set_music(bool ison) {
 	return true;
 }
 
+<<<<<<< HEAD
 bool prefs::stop_music_in_background()
 {
 	return preferences_[prefs_list::stop_music_in_background].to_bool();
@@ -1036,6 +1103,8 @@ void prefs::set_stop_music_in_background(bool ison)
 	preferences_[prefs_list::stop_music_in_background] = ison;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 int prefs::scroll_speed()
 {
 	return std::clamp<int>(preferences_[prefs_list::scroll].to_int(50), 1, 100);
@@ -1051,6 +1120,7 @@ bool prefs::middle_click_scrolls()
 	return preferences_[prefs_list::middle_click_scrolls].to_bool(true);
 }
 
+<<<<<<< HEAD
 bool prefs::mouse_scroll_enabled()
 {
 	return preferences_[prefs_list::mouse_scrolling].to_bool(true);
@@ -1061,11 +1131,14 @@ void prefs::enable_mouse_scroll(bool value)
 	preferences_[prefs_list::mouse_scrolling] = value;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 int prefs::mouse_scroll_threshold()
 {
 	return preferences_[prefs_list::scroll_threshold].to_int(10);
 }
 
+<<<<<<< HEAD
 bool prefs::animate_map()
 {
 	return preferences_[prefs_list::animate_map].to_bool(true);
@@ -1136,6 +1209,8 @@ void prefs::set_animate_water(bool value)
 	preferences_[prefs_list::animate_water] = value;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 bool prefs::show_fps()
 {
 	return fps_;
@@ -1146,6 +1221,7 @@ void prefs::set_show_fps(bool value)
 	fps_ = value;
 }
 
+<<<<<<< HEAD
 int prefs::draw_delay()
 {
 	return preferences_[prefs_list::draw_delay].to_int(-1);
@@ -1156,6 +1232,8 @@ void prefs::set_draw_delay(int value)
 	preferences_[prefs_list::draw_delay] = value;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 void prefs::load_hotkeys()
 {
 	hotkey::load_custom_hotkeys(game_config_view::wrap(preferences_));
@@ -1194,7 +1272,11 @@ void prefs::save_sample_rate(const unsigned int rate)
 	if (sample_rate() == rate)
 		return;
 
+<<<<<<< HEAD
 	preferences_[prefs_list::sample_rate] = static_cast<int>(rate);
+=======
+	preferences_[prefs_list::sample_rate] = rate;
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 
 	// If audio is open, we have to re set sample rate
 	sound::reset_sound();
@@ -1210,6 +1292,7 @@ bool prefs::use_twelve_hour_clock_format()
 	return preferences_[prefs_list::use_twelve_hour_clock_format].to_bool();
 }
 
+<<<<<<< HEAD
 bool prefs::disable_auto_moves()
 {
 	return preferences_[prefs_list::disable_auto_moves].to_bool();
@@ -1240,6 +1323,8 @@ void prefs::set_addon_manager_saved_order_name(const std::string& value)
 	preferences_[prefs_list::addon_manager_saved_order_name] = value;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 sort_order::type prefs::addon_manager_saved_order_direction()
 {
 	return sort_order::get_enum(preferences_[prefs_list::addon_manager_saved_order_direction]).value_or(sort_order::type::none);
@@ -1250,6 +1335,7 @@ void prefs::set_addon_manager_saved_order_direction(sort_order::type value)
 	preferences_[prefs_list::addon_manager_saved_order_direction] = sort_order::get_string(value);
 }
 
+<<<<<<< HEAD
 std::string prefs::selected_achievement_group()
 {
 	return preferences_[prefs_list::selected_achievement_group].str();
@@ -1260,6 +1346,8 @@ void prefs::set_selected_achievement_group(const std::string& content_for)
 	preferences_[prefs_list::selected_achievement_group] = content_for;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 bool prefs::achievement(const std::string& content_for, const std::string& id)
 {
 	for(config& ach : preferences_.child_range(prefs_list::achievements))
@@ -1444,6 +1532,7 @@ void prefs::set_sub_achievement(const std::string& content_for, const std::strin
 	preferences_.add_child(prefs_list::achievements, ach);
 }
 
+<<<<<<< HEAD
 void prefs::set_editor_chosen_addon(const std::string& addon_id)
 {
 	preferences_[prefs_list::editor_chosen_addon] = addon_id;
@@ -1463,6 +1552,8 @@ std::string prefs::last_cache_cleared_version()
 	return preferences_[prefs_list::_last_cache_cleaned_ver].str();
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 bool prefs::get_show_deprecation(bool def)
 {
 	return preferences_[prefs_list::show_deprecation].to_bool(def);
@@ -1482,6 +1573,7 @@ optional_const_config prefs::dir_bookmarks()
 	return get_child(prefs_list::dir_bookmarks);
 }
 
+<<<<<<< HEAD
 bool prefs::whisper_friends_only()
 {
 	return preferences_[prefs_list::lobby_whisper_friends_only].to_bool();
@@ -1492,11 +1584,14 @@ void prefs::set_whisper_friends_only(bool v)
 	preferences_[prefs_list::lobby_whisper_friends_only] = v;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 bool prefs::auto_open_whisper_windows()
 {
 	return preferences_[prefs_list::lobby_auto_open_whisper_windows].to_bool(true);
 }
 
+<<<<<<< HEAD
 bool prefs::fi_invert()
 {
 	return preferences_[prefs_list::fi_invert].to_bool();
@@ -1569,6 +1664,8 @@ void prefs::set_editor_draw_num_of_bitmaps(bool value) {
 	preferences_[prefs_list::editor_draw_num_of_bitmaps] = value;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 std::size_t prefs::editor_mru_limit()
 {
 	return std::max(std::size_t(1), preferences_[prefs_list::editor_max_recent_files].to_size_t(10));
@@ -1984,6 +2081,7 @@ void prefs::set_campaign_server(const std::string& host)
 	preferences_[prefs_list::campaign_server] = host;
 }
 
+<<<<<<< HEAD
 bool prefs::turn_dialog()
 {
 	return preferences_[prefs_list::turn_dialog].to_bool();
@@ -2014,11 +2112,14 @@ void prefs::set_hide_whiteboard(bool value)
 	preferences_[prefs_list::hide_whiteboard] = value;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 bool prefs::show_combat()
 {
 	return preferences_[prefs_list::show_combat].to_bool(true);
 }
 
+<<<<<<< HEAD
 bool prefs::allow_observers()
 {
 	return preferences_[prefs_list::allow_observers].to_bool(true);
@@ -2109,6 +2210,8 @@ void prefs::set_turns(int value)
 	preferences_[prefs_list::mp_turns] = value;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 const config& prefs::options()
 {
 	if(options_initialized_) {
@@ -2135,6 +2238,7 @@ void prefs::set_options(const config& values)
 	options_initialized_ = false;
 }
 
+<<<<<<< HEAD
 bool prefs::skip_mp_replay()
 {
 	return preferences_[prefs_list::skip_mp_replay].to_bool();
@@ -2165,6 +2269,8 @@ void prefs::set_countdown(bool value)
 	preferences_[prefs_list::mp_countdown] = value;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 int prefs::countdown_init_time()
 {
 	return std::clamp<int>(preferences_[prefs_list::mp_countdown_init_time].to_int(240), 0, 1500);
@@ -2255,6 +2361,7 @@ void prefs::set_xp_modifier(int value)
 	preferences_[prefs_list::mp_xp_modifier] = value;
 }
 
+<<<<<<< HEAD
 std::string prefs::era()
 {
 	return preferences_[prefs_list::mp_era].str();
@@ -2285,6 +2392,8 @@ void prefs::set_level_type(int value)
 	preferences_[prefs_list::mp_level_type] = value;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 const std::vector<std::string>& prefs::modifications(bool mp)
 {
 	if((!mp_modifications_initialized_ && mp) || (!sp_modifications_initialized_ && !mp)) {
@@ -2311,6 +2420,7 @@ void prefs::set_modifications(const std::vector<std::string>& value, bool mp)
 	}
 }
 
+<<<<<<< HEAD
 bool prefs::skip_ai_moves()
 {
 	return preferences_[prefs_list::skip_ai_moves].to_bool();
@@ -2391,6 +2501,8 @@ void prefs::set_show_floating_labels(bool value)
 	preferences_[prefs_list::floating_labels] = value;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 bool prefs::message_private()
 {
 	return message_private_on_;
@@ -2423,7 +2535,11 @@ compression::format prefs::save_compression_format()
 
 std::string prefs::get_chat_timestamp(const std::time_t& t)
 {
+<<<<<<< HEAD
 	if(chat_timestamping()) {
+=======
+	if(chat_timestamp()) {
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 		if(use_twelve_hour_clock_format() == false) {
 			return lg::get_timestamp(t, _("[%H:%M]")) + " ";
 		} else {
@@ -2434,6 +2550,7 @@ std::string prefs::get_chat_timestamp(const std::time_t& t)
 	return "";
 }
 
+<<<<<<< HEAD
 bool prefs::chat_timestamping()
 {
 	return preferences_[prefs_list::chat_timestamp].to_bool();
@@ -2474,6 +2591,8 @@ void prefs::set_show_all_units_in_help(bool value)
 	preferences_[prefs_list::show_all_units_in_help] = value;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 std::set<std::string>& prefs::encountered_units()
 {
 	return encountered_units_set_;
@@ -2484,6 +2603,7 @@ std::set<t_translation::terrain_code>& prefs::encountered_terrains()
 	return encountered_terrains_set_;
 }
 
+<<<<<<< HEAD
 std::string prefs::custom_command()
 {
 	return preferences_[prefs_list::custom_command].str();
@@ -2494,6 +2614,8 @@ void prefs::set_custom_command(const std::string& command)
 	preferences_[prefs_list::custom_command] = command;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 /**
  * Returns a pointer to the history vector associated with given id
  * making a new one if it doesn't exist.
@@ -2566,6 +2688,7 @@ void prefs::encounter_all_content(const game_board& gameboard_)
 	encounter_map_terrain(gameboard_.map());
 }
 
+<<<<<<< HEAD
 bool prefs::player_joins_sound()
 {
 	return preferences_[prefs_list::player_joins_sound].to_bool(true);
@@ -2816,6 +2939,8 @@ void prefs::set_game_created_lobby(bool val)
 	preferences_[prefs_list::game_created_lobby] = val;
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 void prefs::clear_mp_alert_prefs()
 {
 	preferences_.remove_attribute(prefs_list::player_joins_sound);

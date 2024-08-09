@@ -291,6 +291,7 @@ bool file_tree_checksum::operator==(const file_tree_checksum &rhs) const
 		modified == rhs.modified;
 }
 
+<<<<<<< HEAD
 bool ends_with(const std::string& str, const std::string& suffix)
 {
 #ifdef __cpp_lib_starts_ends_with
@@ -300,6 +301,8 @@ bool ends_with(const std::string& str, const std::string& suffix)
 #endif
 }
 
+=======
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 std::string read_map(const std::string& name)
 {
 	std::string res;

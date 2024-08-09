@@ -1042,7 +1042,11 @@ void play_controller::do_autosave()
 {
 	scoped_savegame_snapshot snapshot(*this);
 	savegame::autosave_savegame save(saved_game_, prefs::get().save_compression_format());
+<<<<<<< HEAD
 	save.autosave(false, prefs::get().autosavemax(), pref_constants::INFINITE_AUTO_SAVES);
+=======
+	save.autosave(false, prefs::get().auto_save_max(), pref_constants::INFINITE_AUTO_SAVES);
+>>>>>>> c10c47ebb180dff204a8aea7058edfd9f90cc7d5
 }
 
 void play_controller::do_consolesave(const std::string& filename)
