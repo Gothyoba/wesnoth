@@ -24,7 +24,7 @@
 #include "picture.hpp"
 #include "log.hpp"
 #include "map/map.hpp"
-#include "preferences/game.hpp"
+#include "preferences/preferences.hpp"
 #include "serialization/string_utils.hpp"
 #include "game_config_view.hpp"
 
@@ -122,7 +122,7 @@ void terrain_builder::tile::rebuild_cache(const std::string& tod, logs* log)
 
 	for(const rule_image_rand& ri : images) {
 		bool is_background = ri->is_background();
-		bool animate = (!ri.ri->is_water || preferences::animate_water());
+		bool animate = (!ri.ri->is_water || prefs::get().animate_water());
 
 		imagelist& img_list = is_background ? images_background : images_foreground;
 
@@ -202,6 +202,14 @@ static unsigned int get_noise(const map_location& loc, unsigned int index)
 	return abc * abc;
 }
 
+terrain_builder::tilemap::tilemap(int x, int y)
+	: tiles_((x + 4) * (y + 4))
+	, x_(x)
+	, y_(y)
+{
+	reset();
+}
+
 void terrain_builder::tilemap::reset()
 {
 	for(std::vector<tile>::iterator it = tiles_.begin(); it != tiles_.end(); ++it)
@@ -212,7 +220,7 @@ void terrain_builder::tilemap::reload(int x, int y)
 {
 	x_ = x;
 	y_ = y;
-	std::vector<terrain_builder::tile> new_tiles((x + 4) * (y + 4));
+	std::vector<terrain_builder::tile> new_tiles(static_cast<size_t>(x + 4) * (y + 4));
 	tiles_.swap(new_tiles);
 	reset();
 }
@@ -637,8 +645,8 @@ void terrain_builder::rotate_rule(building_rule& ret, int angle, const std::vect
 	}
 
 	// Normalize the rotation, so that it starts on a positive location
-	int minx = INT_MAX;
-	int miny = INT_MAX;
+	int minx = std::numeric_limits<int>::max();
+	int miny = std::numeric_limits<int>::max();
 
 	for(const terrain_constraint& cons : ret.constraints) {
 		minx = std::min<int>(cons.loc.x, minx);
@@ -655,6 +663,18 @@ void terrain_builder::rotate_rule(building_rule& ret, int angle, const std::vect
 	}
 
 	replace_rotate_tokens(ret, angle, rot);
+}
+
+terrain_builder::rule_image_variant::rule_image_variant(const std::string& image_string,
+		const std::string& variations,
+		int random_start)
+	: image_string(image_string)
+	, variations(variations)
+	, images()
+	, tods()
+	, has_flag()
+	, random_start(random_start)
+{
 }
 
 terrain_builder::rule_image_variant::rule_image_variant(const std::string& image_string,
@@ -752,7 +772,11 @@ terrain_builder::terrain_constraint& terrain_builder::add_constraints(terrain_bu
 
 	if(!cons) {
 		// The terrain at the current location did not exist, so create it
+#ifdef __cpp_aggregate_paren_init
 		constraints.emplace_back(loc);
+#else
+		constraints.push_back({loc});
+#endif
 		cons = &constraints.back();
 	}
 
@@ -1154,7 +1178,7 @@ void terrain_builder::build_terrains()
 		// Find the constraint that contains the less terrain of all terrain rules.
 		// We will keep a track of the matching terrains of this constraint
 		// and later try to apply the rule only on them
-		std::size_t min_size = INT_MAX;
+		std::size_t min_size = std::numeric_limits<int>::max();
 		t_translation::ter_list min_types = t_translation::ter_list(); // <-- This must be explicitly initialized, just
 																	   // as min_constraint is, at start of loop, or we
 																	   // get a null pointer dereference when we go

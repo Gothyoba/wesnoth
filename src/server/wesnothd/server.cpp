@@ -411,6 +411,8 @@ config server::read_config() const
 	}
 
 	try {
+		// necessary to avoid assert since preprocess_file() goes through filesystem::get_short_wml_path()
+		filesystem::set_user_data_dir(std::string());
 		filesystem::scoped_istream stream = preprocess_file(config_file_);
 		read(configuration, *stream);
 		LOG_SERVER << "Server configuration from file: '" << config_file_ << "' read.";
@@ -1572,10 +1574,7 @@ void server::handle_player_in_game(player_iterator p, simple_wml::document& data
 			desc.child("modification")->set_attr_dup("id", m->attr("id"));
 			desc.child("modification")->set_attr_dup("name", m->attr("name"));
 			desc.child("modification")->set_attr_dup("addon_id", m->attr("addon_id"));
-
-			if(m->attr("require_modification").to_bool(false)) {
-				desc.child("modification")->set_attr("require_modification", "yes");
-			}
+			desc.child("modification")->set_attr_dup("require_modification", m->attr("require_modification"));
 		}
 
 		// Record the full scenario in g.level()
@@ -1990,7 +1989,7 @@ void server::remove_player(player_iterator iter)
 	if(game_ended) delete_game(g->id());
 }
 
-void server::send_to_lobby(simple_wml::document& data, std::optional<player_iterator> exclude)
+void server::send_to_lobby(simple_wml::document& data, utils::optional<player_iterator> exclude)
 {
 	for(const auto& p : player_connections_.get<game_t>().equal_range(0)) {
 		auto player { player_connections_.iterator_to(p) };
@@ -2000,7 +1999,7 @@ void server::send_to_lobby(simple_wml::document& data, std::optional<player_iter
 	}
 }
 
-void server::send_server_message_to_lobby(const std::string& message, std::optional<player_iterator> exclude)
+void server::send_server_message_to_lobby(const std::string& message, utils::optional<player_iterator> exclude)
 {
 	for(const auto& p : player_connections_.get<game_t>().equal_range(0)) {
 		auto player { player_connections_.iterator_to(p) };
@@ -2010,7 +2009,7 @@ void server::send_server_message_to_lobby(const std::string& message, std::optio
 	}
 }
 
-void server::send_server_message_to_all(const std::string& message, std::optional<player_iterator> exclude)
+void server::send_server_message_to_all(const std::string& message, utils::optional<player_iterator> exclude)
 {
 	for(auto player = player_connections_.begin(); player != player_connections_.end(); ++player) {
 		if(player != exclude) {
@@ -2971,7 +2970,7 @@ void server::delete_game(int gameid, const std::string& reason)
 	}
 }
 
-void server::update_game_in_lobby(const wesnothd::game& g, std::optional<player_iterator> exclude)
+void server::update_game_in_lobby(const wesnothd::game& g, utils::optional<player_iterator> exclude)
 {
 	simple_wml::document diff;
 	if(make_change_diff(*games_and_users_list_.child("gamelist"), "gamelist", "game", g.description(), diff)) {
@@ -3049,7 +3048,7 @@ int main(int argc, char** argv)
 			keep_alive = true;
 		} else if(val == "--help" || val == "-h") {
 			std::cout << "usage: " << argv[0]
-					  << " [-dvV] [-c path] [-m n] [-p port] [-t n]\n"
+					  << " [-dvV] [-c path] [-m n] [-p port]\n"
 					  << "  -c, --config <path>        Tells wesnothd where to find the config file to use.\n"
 					  << "  -d, --daemon               Runs wesnothd as a daemon.\n"
 					  << "  -h, --help                 Shows this usage message.\n"

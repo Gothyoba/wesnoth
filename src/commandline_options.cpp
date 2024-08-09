@@ -138,8 +138,6 @@ commandline_options::commandline_options(const std::vector<std::string>& args)
 	, mptest(false)
 	, usercache_path(false)
 	, usercache_dir()
-	, userconfig_path(false)
-	, userconfig_dir()
 	, userdata_path(false)
 	, userdata_dir()
 	, validcache(false)
@@ -157,6 +155,13 @@ commandline_options::commandline_options(const std::vector<std::string>& args)
 	, report(false)
 	, windowed(false)
 	, with_replay(false)
+#ifdef _WIN32
+	, no_console(false)
+#endif
+	, no_log_sanitize(false)
+	, log_to_file(false)
+	, no_log_to_file(false)
+	, final_log_redirect_to_file(true)
 	, translation_percent()
 	, args_(args.begin() + 1, args.end())
 	, args0_(*args.begin())
@@ -170,8 +175,6 @@ commandline_options::commandline_options(const std::vector<std::string>& args)
 	general_opts.add_options()
 		("all-translations", "Show all translations, even incomplete ones.")
 		("clock", "Adds the option to show a clock for testing the drawing timer.")
-		("config-dir", po::value<std::string>(), "sets the path of the userdata directory to $HOME/<arg> or My Documents\\My Games\\<arg> for Windows. You can specify also an absolute path outside the $HOME or My Documents\\My Games directory. DEPRECATED: use userdata-dir instead.")
-		("config-path", "prints the path of the userdata directory and exits. DEPRECATED: use userdata-path instead." IMPLY_TERMINAL)
 		("core", po::value<std::string>(), "overrides the loaded core with the one whose id is specified.")
 		("data-dir", po::value<std::string>(), "overrides the data directory with the one specified.")
 		("data-path", "prints the path of the data directory and exits." IMPLY_TERMINAL)
@@ -205,9 +208,7 @@ commandline_options::commandline_options(const std::vector<std::string>& args)
 		("unsafe-scripts", "makes the \'package\' package available to Lua scripts, so that they can load arbitrary packages. Do not do this with untrusted scripts! This action gives ua the same permissions as the Wesnoth executable.")
 		("usercache-dir", po::value<std::string>(), "sets the path of the cache directory to $HOME/<arg> or My Documents\\My Games\\<arg> for Windows. You can specify also an absolute path outside the $HOME or My Documents\\My Games directory. Defaults to $HOME/.cache/wesnoth on X11 and to the userdata-dir on other systems.")
 		("usercache-path", "prints the path of the cache directory and exits.")
-		("userconfig-dir", po::value<std::string>(), "sets the path of the user config directory to $HOME/<arg> or My Documents\\My Games\\<arg> for Windows. You can specify also an absolute path outside the $HOME or My Documents\\My Games directory. Defaults to $HOME/.config/wesnoth on X11 and to the userdata-dir on other systems.")
-		("userconfig-path", "prints the path of the user config directory and exits.")
-		("userdata-dir", po::value<std::string>(), "sets the path of the userdata directory to $HOME/<arg> or My Documents\\My Games\\<arg> for Windows. You can specify also an absolute path outside the $HOME or My Documents\\My Games directory.")
+		("userdata-dir", po::value<std::string>(), "sets the path of the userdata directory. You can use ~ to denote $HOME or My Documents\\My Games on Windows.")
 		("userdata-path", "prints the path of the userdata directory and exits." IMPLY_TERMINAL)
 		("username", po::value<std::string>(), "uses <username> when connecting to a server, ignoring other preferences.")
 		("validcache", "assumes that the cache is valid. (dangerous)")
@@ -244,8 +245,11 @@ commandline_options::commandline_options(const std::vector<std::string>& args)
 		("log-none", po::value<std::vector<std::string>>()->composing(), "sets the severity level of the specified log domain(s) to 'none'. Similar to --log-error.")
 		("log-precise", "shows the timestamps in log output with more precision.")
 		("no-log-to-file", "log output is written only to standard error rather than to a file. The environment variable WESNOTH_NO_LOG_FILE can also be set as an alternative.")
-		("log-to-file", "log output is written to a file. Cancels the effect of --no-log-to-file whether implicit or explicit.")
+		("log-to-file", "log output is written to the log file instead of standard error. Cancels the effect of --no-log-to-file whether implicit or explicit.")
+		("no-log-sanitize", "disables the anonymization that's normally applied when logging, for example replacing usernames with USER.")
+#ifdef _WIN32
 		("wnoconsole", "For Windows, when used with --no-log-to-file, results in output being written to cerr/cout instead of CONOUT. Otherwise, does nothing.")
+#endif
 		;
 
 	po::options_description multiplayer_opts("Multiplayer options");
@@ -330,10 +334,6 @@ commandline_options::commandline_options(const std::vector<std::string>& args)
 		clock = true;
 	if(vm.count("core"))
 		core_id = vm["core"].as<std::string>();
-	if(vm.count("config-dir"))
-		userdata_dir = vm["config-dir"].as<std::string>(); //TODO: complain and remove
-	if(vm.count("config-path"))
-		userdata_path = true; //TODO: complain and remove
 	if(vm.count("controller"))
 		multiplayer_controller = parse_to_uint_string_tuples_(vm["controller"].as<std::vector<std::string>>());
 	if(vm.count("data-dir"))
@@ -490,10 +490,6 @@ commandline_options::commandline_options(const std::vector<std::string>& args)
 		usercache_dir = vm["usercache-dir"].as<std::string>();
 	if(vm.count("usercache-path"))
 		usercache_path = true;
-	if(vm.count("userconfig-dir"))
-		userconfig_dir = vm["userconfig-dir"].as<std::string>();
-	if(vm.count("userconfig-path"))
-		userconfig_path = true;
 	if(vm.count("userdata-dir"))
 		userdata_dir = vm["userdata-dir"].as<std::string>();
 	if(vm.count("userdata-path"))
@@ -523,6 +519,16 @@ commandline_options::commandline_options(const std::vector<std::string>& args)
 		windowed = true;
 	if(vm.count("with-replay"))
 		with_replay = true;
+#ifdef _WIN32
+	if(vm.count("wnoconsole"))
+		no_console = true;
+#endif
+	if(vm.count("no-log-sanitize"))
+		no_log_sanitize = true;
+	if(vm.count("log-to-file"))
+		log_to_file = true;
+	if(vm.count("no-log-to-file"))
+		no_log_to_file = true;
 	if(vm.count("all-translations"))
 		translation_percent = 0;
 	else if(vm.count("translations-over"))

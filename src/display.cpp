@@ -28,7 +28,7 @@
 #include "filesystem.hpp"
 #include "font/sdl_ttf_compat.hpp"
 #include "font/text.hpp"
-#include "preferences/game.hpp"
+#include "preferences/preferences.hpp"
 #include "halo.hpp"
 #include "hotkey/command_executor.hpp"
 #include "log.hpp"
@@ -155,7 +155,7 @@ display::display(const display_context* dc,
 	, xpos_(0)
 	, ypos_(0)
 	, view_locked_(false)
-	, theme_(theme::get_theme_config(theme_id.empty() ? preferences::theme() : theme_id), video::game_canvas())
+	, theme_(theme::get_theme_config(theme_id.empty() ? prefs::get().theme() : theme_id), video::game_canvas())
 	, zoom_index_(0)
 	, fake_unit_man_(new fake_unit_manager(*this))
 	, builder_(new terrain_builder(level, (dc_ ? &dc_->map() : nullptr), theme_.border().tile_image, theme_.border().show_border))
@@ -215,13 +215,13 @@ display::display(const display_context* dc,
 	fill_images_list(game_config::fog_prefix, fog_images_);
 	fill_images_list(game_config::shroud_prefix, shroud_images_);
 
-	unsigned int tile_size = preferences::tile_size();
+	unsigned int tile_size = prefs::get().tile_size();
 	if(tile_size < MinZoom || tile_size > MaxZoom)
 		tile_size = DefaultZoom;
 	zoom_index_ = get_zoom_levels_index(tile_size);
 	zoom_ = zoom_levels[zoom_index_];
-	if(zoom_ != preferences::tile_size())	// correct saved tile_size if necessary
-		preferences::set_tile_size(zoom_);
+	if(zoom_ != prefs::get().tile_size())	// correct saved tile_size if necessary
+		prefs::get().set_tile_size(zoom_);
 
 	init_flags();
 
@@ -1293,13 +1293,11 @@ void display::drawing_buffer_add(const drawing_layer layer, const map_location& 
 		int(zoom_)
 	};
 
-	// C++20 needed for in-place aggregate initilization
-#ifdef HAVE_CXX20
+#ifdef __cpp_aggregate_paren_init
 	drawing_buffer_.emplace_back(generate_hex_key(layer, loc), draw_func, dest);
 #else
-	draw_helper temp{generate_hex_key(layer, loc), draw_func, dest};
-	drawing_buffer_.push_back(std::move(temp));
-#endif //  HAVE_CXX20
+	drawing_buffer_.push_back({generate_hex_key(layer, loc), draw_func, dest});
+#endif
 }
 
 void display::drawing_buffer_commit()
@@ -1539,7 +1537,7 @@ void display::set_diagnostic(const std::string& msg)
 
 void display::update_fps_count()
 {
-	static int time_between_draws = preferences::draw_delay();
+	static int time_between_draws = prefs::get().draw_delay();
 	if(time_between_draws < 0) {
 		time_between_draws = 1000 / video::current_refresh_rate();
 	}
@@ -1687,7 +1685,7 @@ void display::draw_minimap()
 
 void display::draw_minimap_units()
 {
-	if (!preferences::minimap_draw_units() || is_blindfolded()) return;
+	if (!prefs::get().minimap_draw_units() || is_blindfolded()) return;
 
 	double xscaling = 1.0 * minimap_location_.w / get_map().w();
 	double yscaling = 1.0 * minimap_location_.h / get_map().h();
@@ -1703,7 +1701,7 @@ void display::draw_minimap_units()
 		int side = u.side();
 		color_t col = team::get_minimap_color(side);
 
-		if(!preferences::minimap_movement_coding()) {
+		if(!prefs::get().minimap_movement_coding()) {
 			auto status = orb_status::allied;
 			if(dc_->teams()[currentTeam_].is_enemy(side)) {
 				status = orb_status::enemy;
@@ -1902,7 +1900,7 @@ bool display::set_zoom(unsigned int amount, const bool validate_value_and_set_in
 		last_zoom_ = zoom_;
 	}
 
-	preferences::set_tile_size(zoom_);
+	prefs::get().set_tile_size(zoom_);
 
 	labels().recalculate_labels();
 	redraw_background_ = true;
@@ -1942,7 +1940,7 @@ bool display::tile_nearly_on_screen(const map_location& loc) const
 
 void display::scroll_to_xy(int screenxpos, int screenypos, SCROLL_TYPE scroll_type, bool force)
 {
-	if(!force && (view_locked_ || !preferences::scroll_to_action())) return;
+	if(!force && (view_locked_ || !prefs::get().scroll_to_action())) return;
 	if(video::headless()) {
 		return;
 	}
@@ -1956,7 +1954,7 @@ void display::scroll_to_xy(int screenxpos, int screenypos, SCROLL_TYPE scroll_ty
 	int xmove = xpos - xpos_;
 	int ymove = ypos - ypos_;
 
-	if(scroll_type == WARP || scroll_type == ONSCREEN_WARP || turbo_speed() > 2.0 || preferences::scroll_speed() > 99) {
+	if(scroll_type == WARP || scroll_type == ONSCREEN_WARP || turbo_speed() > 2.0 || prefs::get().scroll_speed() > 99) {
 		scroll(xmove,ymove,true);
 		redraw_minimap();
 		events::draw();
@@ -1988,7 +1986,7 @@ void display::scroll_to_xy(int screenxpos, int screenypos, SCROLL_TYPE scroll_ty
 		const double accel_time = 0.3 / turbo_speed(); // seconds until full speed is reached
 		const double decel_time = 0.4 / turbo_speed(); // seconds from full speed to stop
 
-		double velocity_max = preferences::scroll_speed() * 60.0;
+		double velocity_max = prefs::get().scroll_speed() * 60.0;
 		velocity_max *= turbo_speed();
 		double accel = velocity_max / accel_time;
 		double decel = velocity_max / decel_time;
@@ -2187,14 +2185,14 @@ void display::bounds_check_position(int& xpos, int& ypos) const
 
 double display::turbo_speed() const
 {
-	bool res = preferences::turbo();
+	bool res = prefs::get().turbo();
 	if(keys_[SDLK_LSHIFT] || keys_[SDLK_RSHIFT]) {
 		res = !res;
 	}
 
 	res |= video::headless();
 	if(res)
-		return preferences::turbo_speed();
+		return prefs::get().turbo_speed();
 	else
 		return 1.0;
 }
@@ -2418,7 +2416,7 @@ void display::draw()
 		drawing_buffer_commit();
 	}
 
-	if(preferences::show_fps() || debug_flag_set(DEBUG_BENCHMARK)) {
+	if(prefs::get().show_fps() || debug_flag_set(DEBUG_BENCHMARK)) {
 		update_fps_label();
 		update_fps_count();
 	} else if(fps_handle_ != 0) {
@@ -2433,8 +2431,8 @@ void display::update()
 	update_render_textures();
 
 	// Trigger cache rebuild if animated water preference has changed.
-	if(animate_water_ != preferences::animate_water()) {
-		animate_water_ = preferences::animate_water();
+	if(animate_water_ != prefs::get().animate_water()) {
+		animate_water_ = prefs::get().animate_water();
 		builder_->rebuild_cache_all();
 	}
 
@@ -2640,7 +2638,7 @@ void display::draw_invalidated()
 	DBG_DP << "drawing " << invalidated_.size() << " invalidated hexes with clip " << clip_rect;
 
 	// The unit drawer can't function without teams
-	std::optional<unit_drawer> drawer{};
+	utils::optional<unit_drawer> drawer{};
 	if(!dc_->teams().empty()) {
 		drawer.emplace(*this);
 	}
@@ -2703,7 +2701,7 @@ void display::draw_hex(const map_location& loc)
 		});
 
 		// Draw the grid, if that's been enabled
-		if(preferences::grid()) {
+		if(prefs::get().grid()) {
 			static const image::locator grid_top{game_config::images::grid_top};
 			static const image::locator grid_bottom{game_config::images::grid_bottom};
 
@@ -2903,7 +2901,7 @@ void display::refresh_report(const std::string& report_name, const config * new_
 
 	// Now we will need the config. Generate one if needed.
 
-	utils::optional_reference<events::mouse_handler> mhb = std::nullopt;
+	utils::optional_reference<events::mouse_handler> mhb = utils::nullopt;
 
 	if (resources::controller) {
 		mhb = resources::controller->get_mouse_handler_base();
@@ -3225,7 +3223,7 @@ void display::invalidate_animations()
 {
 	// There are timing issues with this, but i'm not touching it.
 	new_animation_frame();
-	animate_map_ = preferences::animate_map();
+	animate_map_ = prefs::get().animate_map();
 	if(animate_map_) {
 		for(const map_location& loc : get_visible_hexes()) {
 			if(shrouded(loc))

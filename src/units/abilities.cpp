@@ -1200,7 +1200,7 @@ static std::string select_replacement_type(const unit_ability_list& damage_type_
 static std::string select_alternative_type(const unit_ability_list& damage_type_list, unit_ability_list resistance_list, const unit& u)
 {
 	std::map<std::string, int> type_res;
-	int max_res = INT_MIN;
+	int max_res = std::numeric_limits<int>::min();
 	for(auto& i : damage_type_list) {
 		const config& c = *i.ability_cfg;
 		if(c.has_attribute("alternative_type")) {
@@ -1241,6 +1241,9 @@ std::string attack_type::select_damage_type(const unit_ability_list& damage_type
  */
 std::pair<std::string, std::string> attack_type::damage_type() const
 {
+	if(attack_empty()){
+		return {"", ""};
+	}
 	unit_ability_list damage_type_list = get_specials_and_abilities("damage_type");
 	if(damage_type_list.empty()){
 		return {type(), ""};
@@ -1261,14 +1264,16 @@ std::pair<std::string, std::string> attack_type::damage_type() const
 
 std::set<std::string> attack_type::alternative_damage_types() const
 {
-	unit_ability_list damage_alternative_type_list = get_specials_and_abilities("damage_type");
-	if(damage_alternative_type_list.empty()){
+	unit_ability_list damage_type_list = get_specials_and_abilities("damage_type");
+	if(damage_type_list.empty()){
 		return {};
 	}
 	std::set<std::string> damage_types;
-	for(auto& i : damage_alternative_type_list) {
+	for(auto& i : damage_type_list) {
 		const config& c = *i.ability_cfg;
-		damage_types.insert(c["alternative_type"].str());
+		if(c.has_attribute("alternative_type")){
+			damage_types.insert(c["alternative_type"].str());
+		}
 	}
 
 	return damage_types;
@@ -1992,8 +1997,8 @@ effect::effect(const unit_ability_list& list, int def, const_attack_ptr att, EFF
 
 	individual_effect set_effect_max;
 	individual_effect set_effect_min;
-	std::optional<int> max_value = std::nullopt;
-	std::optional<int> min_value = std::nullopt;
+	utils::optional<int> max_value = utils::nullopt;
+	utils::optional<int> min_value = utils::nullopt;
 
 	for (const unit_ability & ability : list) {
 		const config& cfg = *ability.ability_cfg;
@@ -2026,7 +2031,7 @@ effect::effect(const unit_ability_list& list, int def, const_attack_ptr att, EFF
 			}
 		}
 
-		if(wham == EFFECT_CLAMP_MIN_MAX){
+		if(wham == EFFECT_DEFAULT || wham == EFFECT_CUMULABLE){
 			if(cfg.has_attribute("max_value")){
 				max_value = max_value ? std::min(*max_value, cfg["max_value"].to_int()) : cfg["max_value"].to_int();
 			}
