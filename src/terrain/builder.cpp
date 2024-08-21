@@ -20,13 +20,14 @@
 
 #include "terrain/builder.hpp"
 
+#include "game_config_view.hpp"
+#include "global.hpp"
 #include "gui/dialogs/loading_screen.hpp"
-#include "picture.hpp"
 #include "log.hpp"
 #include "map/map.hpp"
+#include "picture.hpp"
 #include "preferences/preferences.hpp"
 #include "serialization/string_utils.hpp"
-#include "game_config_view.hpp"
 
 static lg::log_domain log_engine("engine");
 #define ERR_NG LOG_STREAM(err, log_engine)
@@ -477,13 +478,11 @@ bool terrain_builder::load_images(building_rule& rule)
 								ERR_NG << "Invalid 'time' value in terrain image builder: " << items.back();
 							}
 						}
-						image::locator locator;
 						if(ri.global_image) {
-							locator = image::locator(filename, constraint.loc, ri.center_x, ri.center_y, modif);
+							res.add_frame(time, image::locator(filename, constraint.loc, ri.center_x, ri.center_y, modif));
 						} else {
-							locator = image::locator(filename, modif);
+							res.add_frame(time, image::locator(filename, modif));
 						}
-						res.add_frame(time, locator);
 					}
 					if(res.get_frames_count() == 0)
 						break; // no valid images, don't register it
@@ -772,11 +771,7 @@ terrain_builder::terrain_constraint& terrain_builder::add_constraints(terrain_bu
 
 	if(!cons) {
 		// The terrain at the current location did not exist, so create it
-#ifdef __cpp_aggregate_paren_init
-		constraints.emplace_back(loc);
-#else
-		constraints.push_back({loc});
-#endif
+		constraints.AGGREGATE_EMPLACE(loc);
 		cons = &constraints.back();
 	}
 

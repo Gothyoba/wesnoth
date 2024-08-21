@@ -180,6 +180,8 @@ public:
 	utils::optional<std::string> render_image;
 	/** Output file to put rendered image path in. Optional second parameter after --render-image */
 	utils::optional<std::string> render_image_dst;
+  /** Path of which to generate a spritesheet */
+	utils::optional<std::string> generate_spritesheet;
 	/** True if --screenshot was given on the command line. Starts Wesnoth in screenshot mode. */
 	bool screenshot;
 	/** Map file to make a screenshot of. First parameter given after --screenshot. */
@@ -252,8 +254,6 @@ public:
 	bool log_to_file;
 	/** True if --no-log-to-file was given on the command line. Results in logs not being redirected to a log file. */
 	bool no_log_to_file;
-	/** final result of determining whether to log to file or not */
-	bool final_log_redirect_to_file;
 	/** Non-empty if --all-translations or --translations-over is given on the command line. */
 	utils::optional<unsigned int> translation_percent;
 private:

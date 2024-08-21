@@ -54,6 +54,7 @@
 #include "widgets/button.hpp" // for button
 #include "wml_exception.hpp"  // for wml_exception
 
+#include "utils/spritesheet_generator.hpp"
 #ifdef _WIN32
 #include "log_windows.hpp"
 
@@ -276,38 +277,38 @@ static int process_command_args(commandline_options& cmdline_opts)
 		lg::set_log_sanitize(false);
 	}
 
-	// decide whether to redirect output to a file or not
-	if(cmdline_opts.log_to_file) {
-		cmdline_opts.final_log_redirect_to_file = true;
-	} else if(cmdline_opts.no_log_to_file) {
-		cmdline_opts.final_log_redirect_to_file = false;
-	} else {
-		// write_to_log_file means that writing to the log file will be done, if true.
-		// if false, output will be written to the terminal
-		// on windows, if wesnoth was not started from a console, then it will allocate one
-		cmdline_opts.final_log_redirect_to_file = !getenv("WESNOTH_NO_LOG_FILE")
-		// command line options that imply not redirecting output to a log file
-		// Some switches force a Windows console to be attached to the process even
-		// if Wesnoth is an IMAGE_SUBSYSTEM_WINDOWS_GUI executable because they
-		// turn it into a CLI application. Also, --no-log-to-file in particular attaches
-		// a console to a regular GUI game session.
-			&& !cmdline_opts.data_path
-			&& !cmdline_opts.help
-			&& !cmdline_opts.logdomains
-			&& !cmdline_opts.nogui
-			&& !cmdline_opts.report
-			&& !cmdline_opts.simple_version
-			&& !cmdline_opts.userdata_path
-			&& !cmdline_opts.version
-			&& !cmdline_opts.do_diff
-			&& !cmdline_opts.do_patch
-			&& !cmdline_opts.preprocess
-			&& !cmdline_opts.render_image
-			&& !cmdline_opts.screenshot
-			&& !cmdline_opts.headless_unit_test
-			&& !cmdline_opts.validate_schema
-			&& !cmdline_opts.validate_wml;
-	}
+	// If true, output will be redirected to file, else output be written to console.
+	// On Windows, if Wesnoth was not started from a console, one will be allocated.
+	const auto should_redirect_to_file = [&cmdline_opts] {
+		if(cmdline_opts.log_to_file) {
+			return true;
+		} else if(cmdline_opts.no_log_to_file) {
+			return false;
+		} else {
+			return !getenv("WESNOTH_NO_LOG_FILE")
+				// command line options that imply not redirecting output to a log file
+				// Some switches force a Windows console to be attached to the process even
+				// if Wesnoth is an IMAGE_SUBSYSTEM_WINDOWS_GUI executable because they
+				// turn it into a CLI application. Also, --no-log-to-file in particular attaches
+				// a console to a regular GUI game session.
+				&& !cmdline_opts.data_path
+				&& !cmdline_opts.help
+				&& !cmdline_opts.logdomains
+				&& !cmdline_opts.nogui
+				&& !cmdline_opts.report
+				&& !cmdline_opts.simple_version
+				&& !cmdline_opts.userdata_path
+				&& !cmdline_opts.version
+				&& !cmdline_opts.do_diff
+				&& !cmdline_opts.do_patch
+				&& !cmdline_opts.preprocess
+				&& !cmdline_opts.render_image
+				&& !cmdline_opts.screenshot
+				&& !cmdline_opts.headless_unit_test
+				&& !cmdline_opts.validate_schema
+				&& !cmdline_opts.validate_wml;
+		}
+	};
 
 	if(cmdline_opts.usercache_dir) {
 		filesystem::set_cache_dir(*cmdline_opts.usercache_dir);
@@ -323,9 +324,14 @@ static int process_command_args(commandline_options& cmdline_opts)
 	}
 
 	// userdata is initialized, so initialize logging to file if enabled
-	if(cmdline_opts.final_log_redirect_to_file) {
+	if(should_redirect_to_file()) {
 		lg::set_log_to_file();
 	}
+#ifdef _WIN32
+	else if(!cmdline_opts.no_console) {
+		lg::do_console_redirect();
+	}
+#endif
 
 	if(cmdline_opts.log) {
 		for(const auto& log_pair : *cmdline_opts.log) {
@@ -336,6 +342,12 @@ static int process_command_args(commandline_options& cmdline_opts)
 				return 2;
 			}
 		}
+	}
+
+	if(!cmdline_opts.nobanner) {
+		PLAIN_LOG << "Battle for Wesnoth v" << game_config::revision  << " " << game_config::build_arch();
+		const std::time_t t = std::time(nullptr);
+		PLAIN_LOG << "Started on " << ctime(&t);
 	}
 
 	if(cmdline_opts.usercache_path) {
@@ -349,52 +361,31 @@ static int process_command_args(commandline_options& cmdline_opts)
 	}
 
 	if(cmdline_opts.data_dir) {
-		const std::string datadir = *cmdline_opts.data_dir;
-		PLAIN_LOG << "Starting with directory: '" << datadir << "'";
-#ifdef _WIN32
-		// use c_str to ensure that index 1 points to valid element since c_str() returns null-terminated string
-		if(datadir.c_str()[1] == ':') {
-#else
-		if(datadir[0] == '/') {
-#endif
-			game_config::path = datadir;
-		} else {
-			game_config::path = filesystem::get_cwd() + '/' + datadir;
-		}
-
-		PLAIN_LOG << "Now have with directory: '" << game_config::path << "'";
-		game_config::path = filesystem::normalize_path(game_config::path, true, true);
+		game_config::path = filesystem::normalize_path(*cmdline_opts.data_dir, true, true);
 		if(!cmdline_opts.nobanner) {
 			PLAIN_LOG << "Overriding data directory with '" << game_config::path << "'";
 		}
-
-		if(!filesystem::is_directory(game_config::path)) {
-			PLAIN_LOG << "Could not find directory '" << game_config::path << "'";
-			throw config::error("directory not found");
-		}
-
-		// don't update font as we already updating it in game ctor
-		// font_manager_.update_font_path();
-	}
-
-	if(!cmdline_opts.nobanner) {
-		PLAIN_LOG << "Battle for Wesnoth v" << game_config::revision  << " " << game_config::build_arch();
-		const std::time_t t = std::time(nullptr);
-		PLAIN_LOG << "Started on " << ctime(&t);
-	}
-
-	if(std::string exe_dir = filesystem::get_exe_dir(); !exe_dir.empty()) {
-		if(std::string auto_dir = filesystem::autodetect_game_data_dir(std::move(exe_dir)); !auto_dir.empty()) {
-			if(!cmdline_opts.nobanner) {
-				PLAIN_LOG << "Automatically found a possible data directory at: " << auto_dir;
-			}
-			game_config::path = std::move(auto_dir);
-		} else if(game_config::path.empty()) {
-			if (!cmdline_opts.data_dir.has_value()) {
-				PLAIN_LOG << "Cannot find a data directory. Specify one with --data-dir";
+	} else {
+		// if a pre-defined path does not exist this will empty it
+		game_config::path = filesystem::normalize_path(game_config::path, true, true);
+		if(game_config::path.empty()) {
+			if(std::string exe_dir = filesystem::get_exe_dir(); !exe_dir.empty()) {
+				if(std::string auto_dir = filesystem::autodetect_game_data_dir(std::move(exe_dir)); !auto_dir.empty()) {
+					if(!cmdline_opts.nobanner) {
+						PLAIN_LOG << "Automatically found a possible data directory at: " << auto_dir;
+					}
+					game_config::path = filesystem::normalize_path(auto_dir, true, true);
+				}
+			} else {
+				PLAIN_LOG << "Cannot find game data directory. Specify one with --data-dir";
 				return 1;
 			}
 		}
+	}
+
+	if(!filesystem::is_directory(game_config::path)) {
+		PLAIN_LOG << "Could not find game data directory '" << game_config::path << "'";
+		return 1;
 	}
 
 	if(cmdline_opts.data_path) {
@@ -495,6 +486,12 @@ static int process_command_args(commandline_options& cmdline_opts)
 		config_writer out(*os, compression::format::none);
 		out.write(base);
 		if(os != &std::cout) delete os;
+		return 0;
+	}
+
+	if(cmdline_opts.generate_spritesheet) {
+		PLAIN_LOG << "sheet path " << *cmdline_opts.generate_spritesheet;
+		image::build_spritesheet_from(*cmdline_opts.generate_spritesheet);
 		return 0;
 	}
 
@@ -717,7 +714,7 @@ static int do_gameloop(commandline_options& cmdline_opts)
 #endif
 
 	gui2::init();
-	gui2::switch_theme(prefs::get().gui_theme());
+	gui2::switch_theme(prefs::get().gui2_theme());
 	const gui2::event::manager gui_event_manager;
 
 	// if the log directory is not writable, then this is the error condition so show the error message.
@@ -897,7 +894,7 @@ static int do_gameloop(commandline_options& cmdline_opts)
 		case gui2::dialogs::title_screen::REDRAW_BACKGROUND:
 			break;
 		case gui2::dialogs::title_screen::RELOAD_UI:
-			gui2::switch_theme(prefs::get().gui_theme());
+			gui2::switch_theme(prefs::get().gui2_theme());
 			break;
 		}
 	}
@@ -935,25 +932,15 @@ int main(int argc, char** argv)
 		commandline_options cmdline_opts = commandline_options(args);
 		int finished = process_command_args(cmdline_opts);
 
-#ifndef _WIN32
 		if(finished != -1) {
+#ifdef _WIN32
+			if(lg::using_own_console()) {
+				std::cerr << "Press enter to continue..." << std::endl;
+				std::cin.get();
+			}
+#endif
 			safe_exit(finished);
 		}
-#else
-		// else handle redirecting the output and potentially attaching a console on windows
-		if(!cmdline_opts.final_log_redirect_to_file) {
-			if(!cmdline_opts.no_console) {
-				lg::do_console_redirect();
-			}
-			if(finished != -1) {
-				if(lg::using_own_console()) {
-					std::cerr << "Press enter to continue..." << std::endl;
-					std::cin.get();
-				}
-				safe_exit(finished);
-			}
-		}
-#endif
 
 		SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
 		// Is there a reason not to just use SDL_INIT_EVERYTHING?
@@ -993,9 +980,6 @@ int main(int argc, char** argv)
 		error_exit(1);
 	} catch(const config::error& e) {
 		PLAIN_LOG << e.message;
-		error_exit(1);
-	} catch(const gui::button::error&) {
-		PLAIN_LOG << "Could not create button: Image could not be found";
 		error_exit(1);
 	} catch(const video::quit&) {
 		// just means the game should quit
