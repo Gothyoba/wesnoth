@@ -17,7 +17,6 @@
 #pragma once
 
 #include "playsingle_controller.hpp"
-#include "syncmp_handler.hpp"
 
 struct mp_game_metadata;
 class playmp_controller : public playsingle_controller
@@ -38,8 +37,7 @@ public:
 	void send_to_wesnothd(const config& cfg, const std::string& packet_type = "unknown") const override;
 	bool receive_from_wesnothd(config& cfg) const override;
 
-
-	void play_slice(bool is_delay_enabled = true) override;
+	void play_slice() override;
 protected:
 	virtual void handle_generic_event(const std::string& name) override;
 

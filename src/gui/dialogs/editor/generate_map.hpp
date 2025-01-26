@@ -23,12 +23,8 @@
 
 class map_generator;
 
-namespace gui2
+namespace gui2::dialogs
 {
-
-namespace dialogs
-{
-
 class editor_generate_map : public modal_dialog
 {
 public:
@@ -48,7 +44,7 @@ public:
 private:
 	virtual const std::string& window_id() const override;
 
-	virtual void pre_show(window& window) override;
+	virtual void pre_show() override;
 
 	/** Callback for generator list selection changes. */
 	void do_generator_selected();
@@ -69,5 +65,4 @@ private:
 	std::string random_seed_;
 };
 
-} // namespace dialogs
-} // namespace gui2
+} // namespace gui2::dialogs

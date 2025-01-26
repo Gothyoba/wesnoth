@@ -62,8 +62,8 @@ public:
 private:
 	virtual const std::string& window_id() const override;
 
-	virtual void pre_show(window& window) override;
-	virtual void post_show(window& /*window*/) override;
+	virtual void pre_show() override;
+	virtual void post_show() override;
 
 	/** Initializers */
 	void initialize_callbacks();
@@ -111,6 +111,7 @@ private:
 
 	int last_selected_item_;
 	unsigned current_gui_theme_;
+	bool is_reload_needed_;
 
 	std::vector<double> accl_speeds_;
 

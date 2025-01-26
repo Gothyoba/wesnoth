@@ -19,6 +19,7 @@
  */
 
 #include "units/attack_type.hpp"
+#include "units/unit.hpp"
 #include "formula/callable_objects.hpp"
 #include "formula/formula.hpp"
 #include "formula/string_utils.hpp"
@@ -46,49 +47,29 @@ static lg::log_domain log_unit("unit");
 static lg::log_domain log_wml("wml");
 #define ERR_WML LOG_STREAM(err, log_wml)
 
-namespace {
-/**
- * Value of attack_type::num_recursion_ at which allocations of further recursion_guards fail. This
- * value is used per weapon, so if two weapon specials are depending on each other being active then
- * with ATTACK_RECURSION_LIMIT = 3 the recursion could go 6 levels deep (and then return false on
- * the 7th call to matches_simple_filter).
- *
- * The counter is checked at the start of matches_simple_filter, and even the first level needs an
- * allocation; setting the limit to zero would make matches_simple_filter always return false.
- *
- * With the recursion limit set to 1, the following tests fail; they just need a reasonable depth.
- * event_test_filter_attack_specials
- * event_test_filter_attack_opponent_weapon_condition
- * event_test_filter_attack_student_weapon_condition
- *
- * With the limit set to 2, all tests pass, but as the limit only affects cases that would otherwise
- * lead to a crash, it seems reasonable to leave a little headroom for more complex logic.
- */
-constexpr unsigned int ATTACK_RECURSION_LIMIT = 4;
-};
-
-attack_type::attack_type(const config& cfg) :
-	self_loc_(),
-	other_loc_(),
-	is_attacker_(false),
-	other_attack_(nullptr),
-	description_(cfg["description"].t_str()),
-	id_(cfg["name"]),
-	type_(cfg["type"]),
-	icon_(cfg["icon"]),
-	range_(cfg["range"]),
-	min_range_(cfg["min_range"].to_int(1)),
-	max_range_(cfg["max_range"].to_int(1)),
-	damage_(cfg["damage"]),
-	num_attacks_(cfg["number"]),
-	attack_weight_(cfg["attack_weight"].to_double(1.0)),
-	defense_weight_(cfg["defense_weight"].to_double(1.0)),
-	accuracy_(cfg["accuracy"]),
-	movement_used_(cfg["movement_used"].to_int(100000)),
-	attacks_used_(cfg["attacks_used"].to_int(1)),
-	parry_(cfg["parry"]),
-	specials_(cfg.child_or_empty("specials")),
-	changed_(true)
+attack_type::attack_type(const config& cfg)
+	: self_loc_()
+	, other_loc_()
+	, is_attacker_(false)
+	, other_attack_(nullptr)
+	, description_(cfg["description"].t_str())
+	, id_(cfg["name"])
+	, type_(cfg["type"])
+	, icon_(cfg["icon"])
+	, range_(cfg["range"])
+	, min_range_(cfg["min_range"].to_int(1))
+	, max_range_(cfg["max_range"].to_int(1))
+	, alignment_(unit_alignments::get_enum(cfg["alignment"].str()))
+	, damage_(cfg["damage"].to_int())
+	, num_attacks_(cfg["number"].to_int())
+	, attack_weight_(cfg["attack_weight"].to_double(1.0))
+	, defense_weight_(cfg["defense_weight"].to_double(1.0))
+	, accuracy_(cfg["accuracy"].to_int())
+	, movement_used_(cfg["movement_used"].to_int(100000))
+	, attacks_used_(cfg["attacks_used"].to_int(1))
+	, parry_(cfg["parry"].to_int())
+	, specials_(cfg.child_or_empty("specials"))
+	, changed_(true)
 {
 	if (description_.empty())
 		description_ = translation::egettext(id_.c_str());
@@ -117,57 +98,22 @@ std::string attack_type::accuracy_parry_description() const
 	return s.str();
 }
 
-namespace {
-/**
- * Print "Recursion limit reached" log messages, including deduplication if the same problem has
- * already been logged.
- */
-void show_recursion_warning(const attack_type& attack, const config& filter) {
-	// This function is only called when the recursion limit has already been reached, meaning the
-	// filter has already been parsed multiple times, so I'm not trying to optimize the performance
-	// of this; it's merely to prevent the logs getting spammed. For example, each of
-	// four_cycle_recursion_branching and event_test_filter_attack_student_weapon_condition only log
-	// 3 unique messages, but without deduplication they'd log 1280 and 392 respectively.
-	static std::vector<std::tuple<std::string, std::string>> already_shown;
-
-	auto identifier = std::tuple<std::string, std::string>{attack.id(), filter.debug()};
-	if(utils::contains(already_shown, identifier)) {
-		return;
-	}
-
-	std::string_view filter_text_view = std::get<1>(identifier);
-	utils::trim(filter_text_view);
-	ERR_UT << "Recursion limit reached for weapon '" << attack.id()
-		<< "' while checking filter '" << filter_text_view << "'";
-
-	// Arbitrary limit, just ensuring that having a huge number of specials causing recursion
-	// warnings can't lead to unbounded memory consumption here.
-	if(already_shown.size() > 100) {
-		already_shown.clear();
-	}
-	already_shown.push_back(std::move(identifier));
-}
-
 /**
  * Returns whether or not *this matches the given @a filter, ignoring the
  * complexities introduced by [and], [or], and [not].
  */
-bool matches_simple_filter(const attack_type& attack, const config& filter, const std::string& tag_name)
+static bool matches_simple_filter(const attack_type & attack, const config & filter, const std::string& check_if_recursion)
 {
-	//update and check variable_recursion for prevent check special_id/type_active in case of infinite recursion.
-	attack_type::recursion_guard filter_lock= attack.update_variables_recursion();
-	if(!filter_lock) {
-		show_recursion_warning(attack, filter);
-		return false;
-	}
-
 	const std::set<std::string> filter_range = utils::split_set(filter["range"].str());
+	const std::string& filter_min_range = filter["min_range"];
+	const std::string& filter_max_range = filter["max_range"];
 	const std::string& filter_damage = filter["damage"];
 	const std::string& filter_attacks = filter["number"];
 	const std::string& filter_accuracy = filter["accuracy"];
 	const std::string& filter_parry = filter["parry"];
 	const std::string& filter_movement = filter["movement_used"];
 	const std::string& filter_attacks_used = filter["attacks_used"];
+	const std::set<std::string> filter_alignment = utils::split_set(filter["alignment"].str());
 	const std::set<std::string> filter_name = utils::split_set(filter["name"].str());
 	const std::set<std::string> filter_type = utils::split_set(filter["type"].str());
 	const std::vector<std::string> filter_special = utils::split(filter["special"]);
@@ -177,6 +123,12 @@ bool matches_simple_filter(const attack_type& attack, const config& filter, cons
 	const std::vector<std::string> filter_special_id_active = utils::split(filter["special_id_active"]);
 	const std::vector<std::string> filter_special_type_active = utils::split(filter["special_type_active"]);
 	const std::string filter_formula = filter["formula"];
+
+	if (!filter_min_range.empty() && !in_ranges(attack.min_range(), utils::parse_ranges_int(filter_min_range)))
+		return false;
+
+	if (!filter_max_range.empty() && !in_ranges(attack.max_range(), utils::parse_ranges_int(filter_max_range)))
+		return false;
 
 	if ( !filter_range.empty() && filter_range.count(attack.range()) == 0 )
 		return false;
@@ -199,6 +151,9 @@ bool matches_simple_filter(const attack_type& attack, const config& filter, cons
 	if (!filter_attacks_used.empty() && !in_ranges(attack.attacks_used(), utils::parse_ranges_unsigned(filter_attacks_used)))
 		return false;
 
+	if(!filter_alignment.empty() && filter_alignment.count(attack.alignment_str()) == 0)
+		return false;
+
 	if ( !filter_name.empty() && filter_name.count(attack.id()) == 0)
 		return false;
 
@@ -207,7 +162,7 @@ bool matches_simple_filter(const attack_type& attack, const config& filter, cons
 		// should always use the base type of the weapon. Otherwise it will flip-flop between the
 		// special being active or inactive based on whether ATTACK_RECURSION_LIMIT is even or odd;
 		// without this it will also behave differently when calculating resistance_against.
-		if(tag_name == "damage_type"){
+		if(check_if_recursion == "damage_type"){
 			if (filter_type.count(attack.type()) == 0){
 				return false;
 			}
@@ -296,6 +251,14 @@ bool matches_simple_filter(const attack_type& attack, const config& filter, cons
 		}
 	}
 
+	//children filter_special are checked later,
+	//but only when the function doesn't return earlier
+	if(auto sub_filter_special = filter.optional_child("filter_special")) {
+		if(!attack.has_special_or_ability_with_filter(*sub_filter_special)) {
+			return false;
+		}
+	}
+
 	if (!filter_formula.empty()) {
 		try {
 			const wfl::attack_type_callable callable(attack);
@@ -314,33 +277,44 @@ bool matches_simple_filter(const attack_type& attack, const config& filter, cons
 	// Passed all tests.
 	return true;
 }
-} // anonymous namespace
 
 /**
  * Returns whether or not *this matches the given @a filter.
  */
-bool attack_type::matches_filter(const config& filter, const std::string& tag_name) const
+bool attack_type::matches_filter(const config& filter, const std::string& check_if_recursion) const
 {
 	// Handle the basic filter.
-	bool matches = matches_simple_filter(*this, filter, tag_name);
+	bool matches = matches_simple_filter(*this, filter, check_if_recursion);
 
 	// Handle [and], [or], and [not] with in-order precedence
-	for (const config::any_child condition : filter.all_children_range() )
+	for(const auto [key, condition_cfg] : filter.all_children_view() )
 	{
 		// Handle [and]
-		if ( condition.key == "and" )
-			matches = matches && matches_filter(condition.cfg, tag_name);
+		if ( key == "and" )
+			matches = matches && matches_filter(condition_cfg, check_if_recursion);
 
 		// Handle [or]
-		else if ( condition.key == "or" )
-			matches = matches || matches_filter(condition.cfg, tag_name);
+		else if ( key == "or" )
+			matches = matches || matches_filter(condition_cfg, check_if_recursion);
 
 		// Handle [not]
-		else if ( condition.key == "not" )
-			matches = matches && !matches_filter(condition.cfg, tag_name);
+		else if ( key == "not" )
+			matches = matches && !matches_filter(condition_cfg, check_if_recursion);
 	}
 
 	return matches;
+}
+
+void attack_type::remove_special_by_filter(const config& filter)
+{
+	config::all_children_iterator i = specials_.ordered_begin();
+	while (i != specials_.ordered_end()) {
+		if(special_matches_filter(i->cfg, i->key, filter)) {
+			i = specials_.erase(i);
+		} else {
+			++i;
+		}
+	}
 }
 
 /**
@@ -359,9 +333,15 @@ bool attack_type::apply_modification(const config& cfg)
 	const t_string& set_desc = cfg["set_description"];
 	const std::string& set_type = cfg["set_type"];
 	const std::string& set_range = cfg["set_range"];
+	const std::string& set_attack_alignment = cfg["set_alignment"];
 	const std::string& set_icon = cfg["set_icon"];
 	const std::string& del_specials = cfg["remove_specials"];
 	auto set_specials = cfg.optional_child("set_specials");
+	const std::string& increase_min_range = cfg["increase_min_range"];
+	const std::string& set_min_range = cfg["set_min_range"];
+	const std::string& increase_max_range = cfg["increase_max_range"];
+	const std::string& set_max_range = cfg["set_max_range"];
+	auto remove_specials = cfg.optional_child("remove_specials");
 	const std::string& increase_damage = cfg["increase_damage"];
 	const std::string& set_damage = cfg["set_damage"];
 	const std::string& increase_attacks = cfg["increase_attacks"];
@@ -395,6 +375,10 @@ bool attack_type::apply_modification(const config& cfg)
 		range_ = set_range;
 	}
 
+	if(set_attack_alignment.empty() == false) {
+		alignment_ = unit_alignments::get_enum(set_attack_alignment);
+	}
+
 	if(set_icon.empty() == false) {
 		icon_ = set_icon;
 	}
@@ -402,11 +386,11 @@ bool attack_type::apply_modification(const config& cfg)
 	if(del_specials.empty() == false) {
 		const std::vector<std::string>& dsl = utils::split(del_specials);
 		config new_specials;
-		for (const config::any_child vp : specials_.all_children_range()) {
+		for(const auto [key, cfg] : specials_.all_children_view()) {
 			std::vector<std::string>::const_iterator found_id =
-				std::find(dsl.begin(), dsl.end(), vp.cfg["id"].str());
+				std::find(dsl.begin(), dsl.end(), cfg["id"].str());
 			if (found_id == dsl.end()) {
-				new_specials.add_child(vp.key, vp.cfg);
+				new_specials.add_child(key, cfg);
 			}
 		}
 		specials_ = new_specials;
@@ -422,9 +406,29 @@ bool attack_type::apply_modification(const config& cfg)
 		if(mode != "append") {
 			specials_.clear();
 		}
-		for(const config::any_child value : set_specials->all_children_range()) {
-			specials_.add_child(value.key, value.cfg);
+		for(const auto [key, cfg] : set_specials->all_children_view()) {
+			specials_.add_child(key, cfg);
 		}
+	}
+
+	if(set_min_range.empty() == false) {
+		min_range_ = std::stoi(set_min_range);
+	}
+
+	if(increase_min_range.empty() == false) {
+		min_range_ = utils::apply_modifier(min_range_, increase_min_range);
+	}
+
+	if(set_max_range.empty() == false) {
+		max_range_ = std::stoi(set_max_range);
+	}
+
+	if(increase_max_range.empty() == false) {
+		max_range_ = utils::apply_modifier(max_range_, increase_max_range);
+	}
+
+	if(remove_specials) {
+		remove_special_by_filter(*remove_specials);
 	}
 
 	if(set_damage.empty() == false) {
@@ -514,6 +518,10 @@ bool attack_type::describe_modification(const config& cfg,std::string* descripti
 
 	// Did the caller want the description?
 	if(description != nullptr) {
+		const std::string& increase_min_range = cfg["increase_min_range"];
+		const std::string& set_min_range = cfg["set_min_range"];
+		const std::string& increase_max_range = cfg["increase_max_range"];
+		const std::string& set_max_range = cfg["set_max_range"];
 		const std::string& increase_damage = cfg["increase_damage"];
 		const std::string& set_damage = cfg["set_damage"];
 		const std::string& increase_attacks = cfg["increase_attacks"];
@@ -528,6 +536,34 @@ bool attack_type::describe_modification(const config& cfg,std::string* descripti
 		const std::string& set_attacks_used = cfg["set_attacks_used"];
 
 		std::vector<t_string> desc;
+
+		if(!set_min_range.empty()) {
+			desc.emplace_back(VGETTEXT(
+				// TRANSLATORS: Current value for WML code set_min_range, documented in https://wiki.wesnoth.org/EffectWML
+				"$number min range",
+				{{"number", set_min_range}}));
+		}
+
+		if(!increase_min_range.empty()) {
+			desc.emplace_back(VGETTEXT(
+				// TRANSLATORS: Current value for WML code increase_min_range, documented in https://wiki.wesnoth.org/EffectWML
+				"<span color=\"$color\">$number_or_percent</span> min range",
+				{{"number_or_percent", utils::print_modifier(increase_min_range)}, {"color", increase_min_range[0] == '-' ? "#f00" : "#0f0"}}));
+		}
+
+		if(!set_max_range.empty()) {
+			desc.emplace_back(VGETTEXT(
+				// TRANSLATORS: Current value for WML code set_max_range, documented in https://wiki.wesnoth.org/EffectWML
+				"$number max range",
+				{{"number", set_max_range}}));
+		}
+
+		if(!increase_max_range.empty()) {
+			desc.emplace_back(VGETTEXT(
+				// TRANSLATORS: Current value for WML code increase_max_range, documented in https://wiki.wesnoth.org/EffectWML
+				"<span color=\"$color\">$number_or_percent</span> max range",
+				{{"number_or_percent", utils::print_modifier(increase_max_range)}, {"color", increase_max_range[0] == '-' ? "#f00" : "#0f0"}}));
+		}
 
 		if(!increase_damage.empty()) {
 			desc.emplace_back(VNGETTEXT(
@@ -635,20 +671,20 @@ bool attack_type::describe_modification(const config& cfg,std::string* descripti
 	return true;
 }
 
-attack_type::recursion_guard attack_type::update_variables_recursion() const
+attack_type::recursion_guard attack_type::update_variables_recursion(const config& special) const
 {
-	if(num_recursion_ < ATTACK_RECURSION_LIMIT) {
-		return recursion_guard(*this);
+	if(utils::contains(open_queries_, &special)) {
+		return recursion_guard();
 	}
-	return recursion_guard();
+	return recursion_guard(*this, special);
 }
 
 attack_type::recursion_guard::recursion_guard() = default;
 
-attack_type::recursion_guard::recursion_guard(const attack_type& weapon)
+attack_type::recursion_guard::recursion_guard(const attack_type& weapon, const config& special)
 	: parent(weapon.shared_from_this())
 {
-	weapon.num_recursion_++;
+	parent->open_queries_.emplace_back(&special);
 }
 
 attack_type::recursion_guard::recursion_guard(attack_type::recursion_guard&& other)
@@ -674,8 +710,10 @@ attack_type::recursion_guard& attack_type::recursion_guard::operator=(attack_typ
 attack_type::recursion_guard::~recursion_guard()
 {
 	if(parent) {
-		assert(parent->num_recursion_ > 0);
-		parent->num_recursion_--;
+		// As this only expects nested recursion, simply pop the top of the open_queries_ stack
+		// without checking that the top of the stack matches the filter passed to the constructor.
+		assert(!parent->open_queries_.empty());
+		parent->open_queries_.pop_back();
 	}
 }
 
@@ -688,6 +726,7 @@ void attack_type::write(config& cfg) const
 	cfg["range"] = range_;
 	cfg["min_range"] = min_range_;
 	cfg["max_range"] = max_range_;
+	cfg["alignment"] = alignment_str();
 	cfg["damage"] = damage_;
 	cfg["number"] = num_attacks_;
 	cfg["attack_weight"] = attack_weight_;

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Battle for Wesnoth\n"
 "Report-Msgid-Bugs-To: https://bugs.wesnoth.org/\n"
-"POT-Creation-Date: 2024-05-26 20:07 UTC\n"
-"PO-Revision-Date: 2024-06-08 07:20+0200\n"
+"POT-Creation-Date: 2025-01-19 17:47 UTC\n"
+"PO-Revision-Date: 2024-10-11 20:27+0200\n"
 "Last-Translator: Michal Žejdl <lachim@emer.cz>\n"
 "Language-Team: Czech https://wiki.wesnoth.org/CzechTranslation\n"
 "Language: cs\n"
@@ -5067,7 +5067,7 @@ msgstr "„Ssourozzenci zzapadajícího ssslunce“"
 #. [message]: speaker=Arinexis
 #: data/campaigns/Winds_of_Fate/scenarios/08_Overlook.cfg:262
 msgid "‘Union of Saurgrath and Morogor’"
-msgstr "„Ješštěrácko Morogorsská unie“"
+msgstr "„Pakt Saurgrat–Morogor“"
 
 #. [message]: speaker=Zedrix
 #: data/campaigns/Winds_of_Fate/scenarios/08_Overlook.cfg:268
@@ -5747,7 +5747,7 @@ msgstr "Je to... Prapředek..."
 
 #. [message]: speaker=Zedrix
 #: data/campaigns/Winds_of_Fate/scenarios/09_Ancestor.cfg:363
-msgid "Shek'kahan, do you not recognize Khrakrahs...?"
+msgid "Shek’kahan, do you not recognize Khrakrahs...?"
 msgstr "Ty nepoznávášš Krakrašše, Ššekekahane...?"
 
 #. [objective]: condition=win
@@ -5787,7 +5787,7 @@ msgstr "Krakrašši, on je tady..."
 
 #. [message]: speaker=Zedrix
 #: data/campaigns/Winds_of_Fate/scenarios/09_Ancestor.cfg:486
-msgid "Behold, mighty Shek'kahan!"
+msgid "Behold, mighty Shek’kahan!"
 msgstr "Zadržž, mocný Ššekekahane!"
 
 #. [message]: speaker=Khrakrahs
@@ -5800,7 +5800,7 @@ msgstr "Opovážlivče, jak mi můžeš představovat takového podvodníka!"
 msgid ""
 "Impossster?!\n"
 "\n"
-"I am elder of Green Swamp Clan and all my years Shek'kahan protected usss. I "
+"I am elder of Green Swamp Clan and all my years Shek’kahan protected usss. I "
 "could never missstake sssome impossster for him!"
 msgstr ""
 "Podvodníka?!\n"
@@ -5883,7 +5883,7 @@ msgstr "Odcházím."
 #. [message]: speaker=Gorlack
 #: data/campaigns/Winds_of_Fate/scenarios/09_Ancestor.cfg:570
 msgid ""
-"Ancestor, you spoke that Shek'kahan grew weak...\n"
+"Ancestor, you spoke that Shek’kahan grew weak...\n"
 "\n"
 "Yet to his last breath, he was fearless."
 msgstr ""
@@ -5893,7 +5893,7 @@ msgstr ""
 
 #. [message]: speaker=Khrakrahs
 #: data/campaigns/Winds_of_Fate/scenarios/09_Ancestor.cfg:578
-msgid "Yes, Shek'kahan was fearless."
+msgid "Yes, Shek’kahan was fearless."
 msgstr "Ano, Šekekahan byl nebojácný."
 
 #. [message]: speaker=Khrakrahs
@@ -7441,6 +7441,32 @@ msgstr "jehlový zobák"
 #: data/campaigns/Winds_of_Fate/units/Stymphalian.cfg:82
 msgid "bladed feathers"
 msgstr "čepelové peří"
+
+#. [unit_type]: id=Wyrm, race=monster
+#: data/campaigns/Winds_of_Fate/units/Wyrm.cfg:5
+msgid "Wyrm"
+msgstr ""
+
+#. [unit_type]: id=Wyrm, race=monster
+#: data/campaigns/Winds_of_Fate/units/Wyrm.cfg:9
+msgid ""
+"Wyrms are strange beasts, stout serpents with wings, but no legs. They are "
+"relatively rare, and their presence is attributed to some eccentric wizard "
+"or dragon. Mature Wyrms have excellent control of their fire breath attack, "
+"as if they are themselves miniature dragons."
+msgstr ""
+
+#. [attack]: type=pierce
+#: data/campaigns/Winds_of_Fate/units/Wyrm.cfg:74
+msgid "fangs"
+msgstr ""
+
+#. [attack]: type=fire
+#: data/campaigns/Winds_of_Fate/units/Wyrm.cfg:86
+#, fuzzy
+#| msgid "fire breath"
+msgid "breath"
+msgstr "ohnivý dech"
 
 #. [damage]: id=blast
 #: data/campaigns/Winds_of_Fate/utils/abilities.cfg:9

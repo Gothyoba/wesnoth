@@ -20,12 +20,8 @@
 #include "gui/widgets/group.hpp"
 #include "side_controller.hpp"
 
-namespace gui2
+namespace gui2::dialogs
 {
-
-namespace dialogs
-{
-
 class editor_edit_side : public modal_dialog
 {
 public:
@@ -35,8 +31,8 @@ public:
 	DEFINE_SIMPLE_EXECUTE_WRAPPER(editor_edit_side)
 
 private:
-	virtual void pre_show(window& window) override;
-	virtual void post_show(window& window) override;
+	virtual void pre_show() override;
+	virtual void post_show() override;
 
 	side_controller::type& controller_;
 	group<side_controller::type> controller_group;
@@ -46,5 +42,5 @@ private:
 
 	virtual const std::string& window_id() const override;
 };
-} // namespace dialogs
-} // namespace gui2
+
+} // namespace gui2::dialogs

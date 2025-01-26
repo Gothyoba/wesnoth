@@ -79,20 +79,17 @@ class cache_type
 public:
 	bool in_cache(const locator& item) const
 	{
-#ifdef HAVE_CXX20
-		return content_.contains(item);
-#else
-		return content_.find(item) != content_.end();
-#endif
+		return content_.find(item) != content_.end(); // TODO C++20: use content_.contains()
 	}
 
-	/**
-	 * Returns a const reference to cache item associated with the given key.
-	 * @throws std::out_of_range if no corresponding value is found
-	 */
-	const T& locate_in_cache(const locator& item) const
+	/** Returns a pointer to the cached value, or nullptr if not found. */
+	const T* locate_in_cache(const locator& item) const
 	{
-		return content_.at(item);
+		if(auto iter = content_.find(item); iter != content_.end()) {
+			return &iter->second;
+		} else {
+			return nullptr;
+		}
 	}
 
 	/**
@@ -242,8 +239,7 @@ std::ostream& operator<<(std::ostream& s, const locator& l)
 }
 
 locator::locator(const std::string& fn)
-	: type_(FILE)
-	, filename_(fn)
+	: filename_(fn)
 {
 	if(filename_.empty()) {
 		return;
@@ -263,6 +259,8 @@ locator::locator(const std::string& fn)
 		type_ = SUB_FILE;
 		modifications_ = filename_.substr(markup_field, filename_.size() - markup_field);
 		filename_ = filename_.substr(0, markup_field);
+	} else {
+		type_ = FILE;
 	}
 }
 
@@ -327,7 +325,7 @@ static void add_localized_overlay(const std::string& ovr_file, surface& orig_sur
 
 	SDL_Rect area {0, 0, ovr_surf->w, ovr_surf->h};
 
-	sdl_blit(ovr_surf, 0, orig_surf, &area);
+	sdl_blit(ovr_surf, nullptr, orig_surf, &area);
 }
 
 static surface load_image_file(const image::locator& loc)
@@ -673,9 +671,9 @@ surface get_surface(
 	surface_cache& imap = surfaces_[type];
 
 	// return the image if already cached
-	try {
-		return imap.locate_in_cache(i_locator);
-	} catch(const std::out_of_range&) {
+	if(const surface* cached_surf = imap.locate_in_cache(i_locator)) {
+		return *cached_surf;
+	} else {
 		DBG_IMG << "surface cache [" << type << "] miss: " << i_locator;
 	}
 
@@ -696,13 +694,18 @@ surface get_surface(
 	}
 
 	bool_cache& skip = skipped_cache_[type];
-	if(skip.in_cache(i_locator) && skip.locate_in_cache(i_locator))
-	{
-		DBG_IMG << "duplicate load: " << i_locator
-			<< " [" << type << "]"
-			<< " (" << duplicate_loads_ << "/" << total_loads_ << " total)";
-		++duplicate_loads_;
+
+	// In cache...
+	if(const bool* cached_value = skip.locate_in_cache(i_locator)) {
+		// ... and cached as true
+		if(*cached_value) {
+			DBG_IMG << "duplicate load: " << i_locator
+				<< " [" << type << "]"
+				<< " (" << duplicate_loads_ << "/" << total_loads_ << " total)";
+			++duplicate_loads_;
+		}
 	}
+
 	++total_loads_;
 
 	if(skip_cache) {
@@ -782,9 +785,9 @@ point get_size(const locator& i_locator, bool skip_cache)
 
 bool is_in_hex(const locator& i_locator)
 {
-	try {
-		return in_hex_info_.locate_in_cache(i_locator);
-	} catch(const std::out_of_range&) {
+	if(const bool* cached_value = in_hex_info_.locate_in_cache(i_locator)) {
+		return *cached_value;
+	} else {
 		bool res = in_mask_surface(get_surface(i_locator, UNSCALED), get_hexmask());
 		in_hex_info_.add_to_cache(i_locator, res);
 		return res;
@@ -793,21 +796,23 @@ bool is_in_hex(const locator& i_locator)
 
 bool is_empty_hex(const locator& i_locator)
 {
-	if(!is_empty_hex_.in_cache(i_locator)) {
-		surface surf = get_surface(i_locator, HEXED);
-		// emptiness of terrain image is checked during hex cut
-		// so, maybe in cache now, let's recheck
-		if(!is_empty_hex_.in_cache(i_locator)) {
-			// should never reach here
-			// but do it manually if it happens
-			// assert(false);
-			bool is_empty = false;
-			mask_surface(surf, get_hexmask(), &is_empty);
-			is_empty_hex_.add_to_cache(i_locator, is_empty);
-		}
+	if(const bool* cached_value = is_empty_hex_.locate_in_cache(i_locator)) {
+		return *cached_value;
 	}
 
-	return is_empty_hex_.locate_in_cache(i_locator);
+	surface surf = get_surface(i_locator, HEXED);
+
+	// Empty state should be cached during surface fetch. Let's check again
+	if(const bool* cached_value = is_empty_hex_.locate_in_cache(i_locator)) {
+		return *cached_value;
+	}
+
+	// Should never reach this point, but let's manually do it anyway.
+	surf = surf.clone();
+	bool is_empty = false;
+	mask_surface(surf, get_hexmask(), &is_empty);
+	is_empty_hex_.add_to_cache(i_locator, is_empty);
+	return is_empty;
 }
 
 bool exists(const image::locator& i_locator)
@@ -948,9 +953,9 @@ texture get_texture(const image::locator& i_locator, scale_quality quality, TYPE
 	//
 	// Now attempt to find a cached texture. If found, return it.
 	//
-	try {
-		return cache->locate_in_cache(i_locator);
-	} catch(const std::out_of_range&) {
+	if(const texture* cached_texture = cache->locate_in_cache(i_locator)) {
+		return *cached_texture;
+	} else {
 		DBG_IMG << "texture cache [" << type << "] miss: " << i_locator;
 	}
 
